@@ -138,7 +138,7 @@ export class RoomsService {
         return updateRoomMembership;
       }
 
-      await this.databaseService.notifications.create({
+      const notification = await this.databaseService.notifications.create({
         data: {
           event: "acceptInvite",
           senderId: acceptInviteDto.userId,
@@ -146,6 +146,9 @@ export class RoomsService {
           type: "Action",
           url: "/rooms/acceptInvite"
         }
+      })
+      await this.databaseService.notificationReceivers.create({
+        data: { notificationId: notification.id, receiverId: acceptInviteDto.userId }
       })
 
     } catch (error) {
@@ -176,7 +179,7 @@ export class RoomsService {
           },
           where: { roomId: blockRoomMemberDto.roomId }
         })
-        await this.databaseService.notifications.create({
+        const notification = await this.databaseService.notifications.create({
           data: {
             type: "Action",
             event: "blockMember",
@@ -185,9 +188,11 @@ export class RoomsService {
             url: "/rooms/blockMember"
           }
         })
+        await this.databaseService.notificationReceivers.create({
+          data: { notificationId: notification.id, receiverId: blockUser.id }
+        })
         return blockUser
       }
-
       throw new BadRequestException("Only Admin has right to block the group user")
     } catch (error) {
       throw new BadRequestException("Only Admin has right to block the group user")
