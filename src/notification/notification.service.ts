@@ -11,13 +11,21 @@ export class NotificationService {
     
     // Fetch notifications for the user, sorted by creation date (newest first)
     const notifications = await this.databaseService.notifications.findMany({
-        where: { receiverId: userId },
+        where: { NotificationReceivers:{
+            some:{
+                receiverId:userId
+            }
+        } },
         orderBy: { createdAt: 'desc' }, // Sort by creation date, newest first
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE,
     });
     const totalNotifications = await this.databaseService.notifications.count({
-        where: { receiverId: userId }
+        where: { NotificationReceivers:{
+            some:{
+                receiverId:userId
+            }
+        } }
     });
 
     // Determine if there's a next page
