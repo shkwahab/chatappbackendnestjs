@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseGuards, ValidationPipe } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { RoomsService } from './rooms.service';
 import { RoomsGateway } from './rooms.gateway'; // Import RoomsGateway
@@ -48,6 +48,13 @@ export class RoomsController {
     @Get()
     async findAll() {
         const rooms = await this.roomsService.findAll();
+        return rooms;
+    }
+
+    @UseGuards(AuthGuard)
+    @Get("admin")
+    async findAllAdminRooms(@Param("id") id:string) {
+        const rooms = await this.roomsService.findAllAdminRooms(id);
         return rooms;
     }
 

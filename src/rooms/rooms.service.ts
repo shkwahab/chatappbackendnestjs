@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Param, Query } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto } from './dto/room.dto';
@@ -27,7 +27,21 @@ export class RoomsService {
 
   async findAll() {
     try {
-      return await this.databaseService.rooms.findMany();
+      return await this.databaseService.rooms.findMany()
+    }
+    catch (error) {
+      console.log(error)
+      throw new BadRequestException(error)
+    }
+  }
+
+  async findAllAdminRooms(@Param("id") id: string) {
+    try {
+      return await this.databaseService.rooms.findMany(
+        {
+          where: { adminId: id }
+        }
+      )
     } catch (error) {
       console.log(error)
       throw new BadRequestException(error)
@@ -95,15 +109,18 @@ export class RoomsService {
     const receiverId = await this.findAdminByRoom(joinRoomDto.roomId)
     const receiver = await this.databaseService.user.findUnique({ where: { id: receiverId } })
 
-    await this.databaseService.notifications.create({
+    const notification = await this.databaseService.notifications.create({
       data: {
         event: "joinRoom",
         senderId: joinRoomDto.userId,
-        receiverId: receiverId,
         message: `${receiver.name} requested to join the group`,
         type: "Action",
-        url: "/rooms/join"
+        url: "/rooms/join",
+
       }
+    })
+    await this.databaseService.notificationReceivers.create({
+      data: { notificationId: notification.id, receiverId }
     })
     return roomMembership
   }
@@ -120,12 +137,11 @@ export class RoomsService {
         })
         return updateRoomMembership;
       }
-      
+
       await this.databaseService.notifications.create({
         data: {
           event: "acceptInvite",
           senderId: acceptInviteDto.userId,
-          receiverId: room.adminId,
           message: `${sender.name} has accepted your invitation`,
           type: "Action",
           url: "/rooms/acceptInvite"
@@ -165,9 +181,8 @@ export class RoomsService {
             type: "Action",
             event: "blockMember",
             senderId: admin,
-            receiverId: blockRoomMemberDto.userId,
             message: `${sender.name} has blocked you`,
-            url:"/rooms/blockMember"
+            url: "/rooms/blockMember"
           }
         })
         return blockUser

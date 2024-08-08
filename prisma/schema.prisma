@@ -24,7 +24,7 @@ model User {
   adminRooms           Rooms[]             @relation("Admin")
   messageStatuses      MessageStatus[]
   notificationSender   Notifications[]     @relation("notificationSender")
-  notificationReceiver Notifications[]     @relation("notificationReceiver")
+  NotificationReceivers NotificationReceivers[]
 }
 
 model Rooms {
@@ -66,7 +66,7 @@ model Message {
 
 model MessageMemberShip {
   id         String @id @default(auto()) @map("_id") @db.ObjectId
-  messageId  String @db.ObjectId
+  messageId  String @db.ObjectId @unique
   senderId   String @db.ObjectId
   receiverId String @db.ObjectId
   roomId     String @db.ObjectId
@@ -97,13 +97,22 @@ model Notifications {
   type       NotificationType
   url        String?
   senderId   String   @db.ObjectId
-  receiverId String   @db.ObjectId
   createdAt  DateTime @default(now())
 
   notificationSender   User @relation("notificationSender", fields: [senderId], references: [id])
-  notificationReceiver User @relation("notificationReceiver", fields: [senderId], references: [id])
+  NotificationReceivers NotificationReceivers[]
 }
 
+model NotificationReceivers {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  notificationId String         @db.ObjectId
+  receiverId     String         @db.ObjectId
+
+  notification   Notifications  @relation(fields: [notificationId], references: [id])
+  receiver       User           @relation(fields: [receiverId], references: [id])
+
+  @@unique([notificationId, receiverId])
+}
 enum UserRole {
   USER
   ADMIN
