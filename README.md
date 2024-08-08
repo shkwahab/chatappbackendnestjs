@@ -14,4 +14,4 @@
 </p>
 Description
 
-This is the backend for a chat application built with Nest.js, MongoDB, and Prisma. It offers robust features for real-time communication and scalable data management.
+This is the backend for a chat application built with Nest.js, MongoDB, and Prisma. It offers robust features for real-time group chatting feature with pusher notifications.
