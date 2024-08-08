@@ -16,7 +16,6 @@ export class RoomsController {
     @Post()
     async create(@Body(ValidationPipe) createRoomDto: CreateRoomDto) {
         const room = await this.roomsService.create(createRoomDto);
-        this.roomsGateway.newRoom(room);
         return room;
     }
 
@@ -32,7 +31,6 @@ export class RoomsController {
     @Get()
     async findAll() {
         const rooms = await this.roomsService.findAll();
-        await this.roomsGateway.findAll();
         return rooms;
     }
 
@@ -54,7 +52,6 @@ export class RoomsController {
     @Patch(":id")
     async update(@Param("id") id: string, @Body() updateRoomDto: Prisma.RoomsUpdateInput) {
         const updatedRoom = await this.roomsService.update(id, updateRoomDto);
-        await this.roomsGateway.update(id, updateRoomDto); // Emit event
         return updatedRoom;
     }
 
@@ -62,7 +59,6 @@ export class RoomsController {
     @Delete(':id')
     async remove(@Param('id') id: string) {
         await this.roomsService.remove(id);
-        this.roomsGateway.remove(id); // Emit event
         return { message: "deleted successfully" };
     }
 }
