@@ -46,15 +46,15 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Get()
-    async findAll() {
-        const rooms = await this.roomsService.findAll();
+    async findAll(@Query("page") page?:number) {
+        const rooms = await this.roomsService.findAll(page);
         return rooms;
     }
 
     @UseGuards(AuthGuard)
     @Get("admin")
-    async findAllAdminRooms(@Param("id") id:string) {
-        const rooms = await this.roomsService.findAllAdminRooms(id);
+    async findAllAdminRooms(@Param("id") id:string, @Query("page") page?:number) {
+        const rooms = await this.roomsService.findAllAdminRooms(id,page);
         return rooms;
     }
 

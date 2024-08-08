@@ -34,24 +34,48 @@ export class MessagesService {
         }
     }
 
-    async findUserMessages(userId: string, roomId: string) {
+    async findUserMessages(userId: string, roomId: string, page: number = 1, limit: number = 10) {
+        const skip = (page - 1) * limit;
         try {
-            const messages = await this.databaseService.message.findMany({
-                where: {
-                    messageMembership: {
-                        some: {
-                            receiverId: userId,
-                            roomId: roomId
-                        },
-
-                    }
-                }
-            })
-            return messages
+          const totalCount = await this.databaseService.message.count({
+            where: {
+              messageMembership: {
+                some: {
+                  receiverId: userId,
+                  roomId: roomId,
+                },
+              },
+            },
+          });
+    
+          const messages = await this.databaseService.message.findMany({
+            where: {
+              messageMembership: {
+                some: {
+                  receiverId: userId,
+                  roomId: roomId,
+                },
+              },
+            },
+            skip,
+            take: limit,
+            orderBy: {
+              createdAt: 'desc', 
+            },
+          });
+    
+          const response = {
+            count: totalCount,
+            next: page * limit < totalCount ? `/messages/${userId}/rooms/${roomId}?page=${page + 1}&limit=${limit}` : null,
+            previous: page > 1 ? `/messages/${userId}/rooms/${roomId}?page=${page - 1}&limit=${limit}` : null,
+            result: messages,
+          };
+    
+          return response;
         } catch (error) {
-            throw new BadRequestException("Failed to retrieve user messages " + error)
+          throw new BadRequestException('Failed to retrieve user messages: ' + error.message);
         }
-    }
+      }
     async sendMessage(roomId: string, senderId: string, message: string, receiverId?: string) {
         try {
             const newmessage = await this.create({ message })
@@ -63,7 +87,31 @@ export class MessagesService {
                     roomId
                 }
             })
+            await this.databaseService.messageStatus.create({
+                data: {
+                    messageId: sendMessage.id,
+                    userId: senderId,
+                    roomId
+                }
+            })
+            const sender = await this.databaseService.user.findUnique({ where: { id: senderId } })
+            if (receiverId) {
+                const notification = await this.databaseService.notifications.create({
+                    data: {
+                        event: "sendMessage",
+                        senderId: senderId,
+                        message: `${sender.name} has sent you the message`,
+                        type: "Message"
+                    }
+                })
 
+                await this.databaseService.notificationReceivers.create({
+                    data: {
+                        receiverId,
+                        notificationId: notification.id
+                    }
+                })
+            }
             return sendMessage
         } catch (error) {
             throw new BadRequestException("FAILED TO SEND MESSAGE " + error)
@@ -97,8 +145,51 @@ export class MessagesService {
                 return await this.delete(messageId);
             }
         } catch (error) {
-            throw new BadRequestException("FAILED TO DELETE MESSAGE "+error)
+            throw new BadRequestException("FAILED TO DELETE MESSAGE " + error)
+        }
+    }
+    async readMessage(messageId: string, userId: string, roomId: string) {
+        try {
+            const read = await this.databaseService.messageStatus.update({
+                data: {
+                    messageId,
+                    userId,
+                    roomId,
+                    isRead: true
+                },
+                where: {
+                    messageId
+                }
+            })
+            return read
+        } catch (error) {
+            throw new BadRequestException("FAILED TO READ MESSAGE" + error)
+        }
+    }
+    async readMessages(read: { messageId: string, userId: string, roomId: string }[]) {
+        try {
+            const readPromises = read.map(item =>
+                this.readMessage(item.messageId, item.userId, item.roomId)
+            );
+            await Promise.all(readPromises);
+        } catch (error) {
+            throw new BadRequestException("Failed to read messages" + error)
         }
     }
 
+    async unReadMessageCount(roomId: string, userId: string) {
+        try {
+            const unRead = await this.databaseService.messageStatus.count({
+                where: {
+                    isRead: false,
+                    userId,
+                    roomId
+                }
+            })
+            return unRead
+        } catch (error) {
+            throw new BadRequestException(error)
+        }
+    }
 }
+

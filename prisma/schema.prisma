@@ -15,7 +15,7 @@ model User {
   email     String   @unique @db.String
   password  String   @db.String
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime? @default(now())
 
   // Relationships managed through join table
   roomMemberships      RoomMembership[]
@@ -34,11 +34,12 @@ model Rooms {
   adminId   String   @db.ObjectId
   isPublic  Boolean  @default(false) // Indicates if the room is public
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime? @updatedAt
 
   // Relationships managed through join table
   adminUser         User                @relation("Admin", fields: [adminId], references: [id])
   messageMembership MessageMemberShip[]
+  messageStatuses      MessageStatus[]
   roomMemberships   RoomMembership[]
 }
 
@@ -49,6 +50,8 @@ model RoomMembership {
   role       UserRole @default(USER)
   isBlocked  Boolean  @default(false)
   isApproved Boolean  @default(false) // Indicates if the user has been approved to join the room
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
 
   user User  @relation(fields: [userId], references: [id])
   room Rooms @relation(fields: [roomId], references: [id])
@@ -58,6 +61,8 @@ model RoomMembership {
 model Message {
   id      String @id @default(auto()) @map("_id") @db.ObjectId
   message String
+  createdAt DateTime @default(now())
+  updatedAt DateTime? 
 
   // relationship
   messageMembership MessageMemberShip[]
@@ -70,6 +75,8 @@ model MessageMemberShip {
   senderId   String @db.ObjectId
   receiverId String @db.ObjectId
   roomId     String @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime? 
 
   room     Rooms   @relation(fields: [roomId], references: [id])
   sender   User    @relation("SentMessages", fields: [senderId], references: [id])
@@ -81,11 +88,13 @@ model MessageStatus {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
   messageId String    @unique @db.ObjectId
   userId    String    @db.ObjectId
+  roomId    String    @db.ObjectId
   isRead    Boolean   @default(false)
   readAt    DateTime?
 
   message Message @relation(fields: [messageId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
+  room    Rooms    @relation(fields: [roomId], references: [id])
 
   @@unique([messageId, userId]) // Ensure a user can only have one status per message
 }
@@ -98,6 +107,7 @@ model Notifications {
   url        String?
   senderId   String   @db.ObjectId
   createdAt  DateTime @default(now())
+  updatedAt DateTime? 
 
   notificationSender   User @relation("notificationSender", fields: [senderId], references: [id])
   NotificationReceivers NotificationReceivers[]

@@ -25,26 +25,94 @@ export class RoomsService {
   }
 
 
-  async findAll() {
+  async findAll(page: number = 1) {
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
     try {
-      return await this.databaseService.rooms.findMany()
-    }
-    catch (error) {
-      console.log(error)
-      throw new BadRequestException(error)
+      // Get total count of rooms
+      const totalCount = await this.databaseService.rooms.count();
+
+      // Fetch rooms with pagination
+      const rooms = await this.databaseService.rooms.findMany({
+        skip,
+        take: limit,
+      });
+
+      // Fetch the last message for each room
+      const roomsWithLastMessage = await Promise.all(
+        rooms.map(async (room) => {
+          const lastMessage = await this.databaseService.messageMemberShip.findFirst({
+            where: { roomId: room.id },
+            orderBy: {
+              createdAt:"desc"
+            }
+          });
+          return {
+            ...room,
+            lastMessage,
+          };
+        }),
+      );
+
+      // Construct response
+      const response = {
+        count: totalCount,
+        next: page * limit < totalCount ? `/rooms?page=${page + 1}` : null,
+        previous: page > 1 ? `/rooms?page=${page - 1}` : null,
+        result: roomsWithLastMessage,
+      };
+
+      return response;
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException('Failed to fetch rooms: ' + error.message);
     }
   }
 
-  async findAllAdminRooms(@Param("id") id: string) {
+  async findAllAdminRooms(id: string, page: number = 1) {
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
     try {
-      return await this.databaseService.rooms.findMany(
-        {
-          where: { adminId: id }
-        }
-      )
+      // Get total count of rooms for the admin
+      const totalCount = await this.databaseService.rooms.count({
+        where: { adminId: id },
+      });
+
+      // Fetch rooms with pagination for the given admin
+      const rooms = await this.databaseService.rooms.findMany({
+        where: { adminId: id },
+        skip,
+        take: limit,
+      });
+
+      // Fetch the last message for each room
+      const roomsWithLastMessage = await Promise.all(
+        rooms.map(async (room) => {
+          const lastMessage = await this.databaseService.messageMemberShip.findFirst({
+            where: { roomId: room.id },
+            orderBy: { createdAt: 'desc' },
+          });
+          return {
+            ...room,
+            lastMessage,
+          };
+        }),
+      );
+
+      // Construct response
+      const response = {
+        count: totalCount,
+        next: page * limit < totalCount ? `/rooms/admin/${id}?page=${page + 1}` : null,
+        previous: page > 1 ? `/admin/rooms/${id}?page=${page - 1}` : null,
+        result: roomsWithLastMessage,
+      };
+
+      return response;
     } catch (error) {
-      console.log(error)
-      throw new BadRequestException(error)
+      console.log(error);
+      throw new BadRequestException('Failed to fetch admin rooms: ' + error.message);
     }
   }
 
