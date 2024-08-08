@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { RoomsService } from './rooms.service';
 import { RoomsGateway } from './rooms.gateway'; // Import RoomsGateway
 import { AuthGuard } from 'src/auth/auth.guard';
-import { CreateRoomDto, JoinRoomDto } from './dto/room.dto';
+import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto } from './dto/room.dto';
 
 @Controller('rooms')
 export class RoomsController {
@@ -26,6 +26,23 @@ export class RoomsController {
         this.roomsGateway.joinRoom(joinRoomDto, req.user)
         return room;
     }
+
+    @UseGuards(AuthGuard)
+    @Post("acceptInvitation")
+    async acceptInvitation(@Body() adminId: string, acceptInviteDto: AcceptInviteDto, @Request() req: any) {
+        const invite = await this.roomsService.acceptInvitation(adminId, acceptInviteDto);
+        this.roomsGateway.acceptRoomInvitations(acceptInviteDto, req);
+        return invite
+    }
+
+    @UseGuards(AuthGuard)
+    @Post("blockMember")
+    async blockMember(@Body() adminId: string, blockRoomMemberDto: BlockRoomMemberDto, @Request() req: any) {
+        const blockMember = await this.roomsService.acceptInvitation(adminId, blockRoomMemberDto);
+        this.roomsGateway.blockMember(blockRoomMemberDto, req);
+        return blockMember
+    }
+
 
     @UseGuards(AuthGuard)
     @Get()

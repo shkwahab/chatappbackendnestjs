@@ -1,7 +1,7 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
 import { RoomsService } from './rooms.service';
 import { Server, Socket } from 'socket.io';
-import { AcceptInviteDto, JoinRoomDto } from './dto/room.dto';
+import { AcceptInviteDto, BlockRoomMemberDto, JoinRoomDto } from './dto/room.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
@@ -16,6 +16,7 @@ export class RoomsGateway {
         private readonly dbService: DatabaseService,
         private readonly jwtService: JwtService
     ) { }
+    
     async handleConnection(client: Socket) {
         const token = client.handshake.auth.token;
         if (!token) {
@@ -49,6 +50,15 @@ export class RoomsGateway {
         const userId = await this.dbService.user.findUnique({ where: { id: acceptInviteDto.userId } })
         if (userId === user.id) {
             this.server.emit("acceptInvitation", acceptInviteDto)
+        }
+    }
+    
+    @SubscribeMessage('blockMember')
+    async blockMember(@MessageBody() blockMemberDto: BlockRoomMemberDto, @ConnectedSocket() client: Socket) {
+        const user = client.handshake.auth.user;
+        const adminId= await this.roomsService.findAdminByRoom(blockMemberDto.roomId)
+        if (adminId === user.id) {
+            this.server.emit("blockMember", blockMemberDto)
         }
     }
 
