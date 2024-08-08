@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  username  String   @unique @db.String
+  img       String   @default("https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png")
+  email     String   @unique @db.String
+  password  String   @db.String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  // Relationships managed through join table
+  roomMemberships      RoomMembership[]
+  sentMessages         MessageMemberShip[] @relation("SentMessages")
+  receivedMessages     MessageMemberShip[] @relation("ReceivedMessages")
+  adminRooms           Rooms[]             @relation("Admin")
+  messageStatuses      MessageStatus[]
+  notificationSender   Notifications[]     @relation("notificationSender")
+  notificationReceiver Notifications[]     @relation("notificationReceiver")
+}
+
+model Rooms {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  img       String   @default("")
+  adminId   String   @db.ObjectId
+  isPublic  Boolean  @default(false) // Indicates if the room is public
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships managed through join table
+  adminUser         User                @relation("Admin", fields: [adminId], references: [id])
+  messageMembership MessageMemberShip[]
+  roomMemberships   RoomMembership[]
+}
+
+model RoomMembership {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  roomId     String   @db.ObjectId @unique
+  role       UserRole @default(USER)
+  isBlocked  Boolean  @default(false)
+  isApproved Boolean  @default(false) // Indicates if the user has been approved to join the room
+
+  user User  @relation(fields: [userId], references: [id])
+  room Rooms @relation(fields: [roomId], references: [id])
+
+}
+
+model Message {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  message String
+
+  // relationship
+  messageMembership MessageMemberShip[]
+  messageStatuses   MessageStatus[]
+}
+
+model MessageMemberShip {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  messageId  String @db.ObjectId
+  senderId   String @db.ObjectId
+  receiverId String @db.ObjectId
+  roomId     String @db.ObjectId
+
+  room     Rooms   @relation(fields: [roomId], references: [id])
+  sender   User    @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  message  Message @relation(fields: [messageId], references: [id])
+}
+
+model MessageStatus {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  messageId String    @unique @db.ObjectId
+  userId    String    @db.ObjectId
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+
+  message Message @relation(fields: [messageId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId]) // Ensure a user can only have one status per message
+}
+
+model Notifications {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  message    String
+  event      String?
+  type       NotificationType
+  url        String?
+  senderId   String   @db.ObjectId
+  receiverId String   @db.ObjectId
+  createdAt  DateTime @default(now())
+
+  notificationSender   User @relation("notificationSender", fields: [senderId], references: [id])
+  notificationReceiver User @relation("notificationReceiver", fields: [senderId], references: [id])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum NotificationType {
+  Message
+  Action
+}
