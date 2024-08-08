@@ -15,7 +15,7 @@ export class RoomsService {
         data: createRoomDto,
       });
       await this.databaseService.roomMembership.create({
-        data: { roomId: room.id, userId: room.adminId, isApproved: true }
+        data: { roomId: room.id, userId: room.adminId, isApproved: true,role:"ADMIN" }
       })
       return room
     } catch (error) {
