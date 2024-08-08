@@ -1,6 +1,5 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
 import { RoomsService } from './rooms.service';
-import { Prisma } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 import { AcceptInviteDto, JoinRoomDto, RoomDto } from './dto/room.dto';
 import { JwtService } from '@nestjs/jwt';
