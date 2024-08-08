@@ -15,7 +15,7 @@ export class RoomsService {
         data: createRoomDto,
       });
       await this.databaseService.roomMembership.create({
-        data: { roomId: room.id, userId: room.adminId, isApproved: true,role:"ADMIN" }
+        data: { roomId: room.id, userId: room.adminId, isApproved: true, role: "ADMIN" }
       })
       return room
     } catch (error) {
@@ -45,7 +45,7 @@ export class RoomsService {
           const lastMessage = await this.databaseService.messageMemberShip.findFirst({
             where: { roomId: room.id },
             orderBy: {
-              createdAt:"desc"
+              createdAt: "desc"
             }
           });
           return {
@@ -171,12 +171,14 @@ export class RoomsService {
   }
 
   async joinRoom(joinRoomDto: JoinRoomDto) {
-    const roomMembership = this.databaseService.roomMembership.create({
-      data: joinRoomDto
+    const roomMembership = await this.databaseService.roomMembership.create({
+      data: {
+        userId: joinRoomDto.userId,
+        roomId: joinRoomDto.roomId
+      }
     })
     const receiverId = await this.findAdminByRoom(joinRoomDto.roomId)
     const receiver = await this.databaseService.user.findUnique({ where: { id: receiverId } })
-
     const notification = await this.databaseService.notifications.create({
       data: {
         event: "joinRoom",
@@ -190,6 +192,7 @@ export class RoomsService {
     await this.databaseService.notificationReceivers.create({
       data: { notificationId: notification.id, receiverId }
     })
+
     return roomMembership
   }
 
@@ -245,7 +248,7 @@ export class RoomsService {
             roomId: blockRoomMemberDto.roomId,
             isBlocked: true
           },
-          where: { roomId: blockRoomMemberDto.roomId }
+          where: { roomId: blockRoomMemberDto.roomId,userId:blockRoomMemberDto.userId }
         })
         const notification = await this.databaseService.notifications.create({
           data: {

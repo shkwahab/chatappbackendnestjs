@@ -21,9 +21,9 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Post("join")
-    async joinRoom(@Body(ValidationPipe) joinRoomDto: JoinRoomDto, @Request() req: any) {
+    async joinRoom(@Body(ValidationPipe) joinRoomDto: JoinRoomDto) {
         const room = await this.roomsService.joinRoom(joinRoomDto)
-        this.roomsGateway.joinRoom(joinRoomDto, req.user)
+        // this.roomsGateway.joinRoom(joinRoomDto, req.user)
         return room;
     }
 

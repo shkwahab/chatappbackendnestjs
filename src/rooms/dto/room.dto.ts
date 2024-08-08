@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { IsBoolean, IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsString } from "class-validator";
 
 export class CreateRoomDto {
   @IsNotEmpty()
@@ -34,11 +34,8 @@ export class JoinRoomDto {
   @IsNotEmpty()
   @IsString()
   roomId: string;
-  @IsString()
   role?: "USER" | "ADMIN";
-  @IsBoolean()
   isBlocked?: boolean;
-  @IsBoolean()
   isApproved?: boolean;
 }
 
