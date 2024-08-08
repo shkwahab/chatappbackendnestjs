@@ -4,6 +4,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
+import { ReadMessageDto, SendMessageDto, UnReadMessageDto } from './dto/messageDto';
 
 
 @WebSocketGateway({ namespace: "message" })
@@ -33,7 +34,7 @@ export class MessagesGateway {
 
 
   @SubscribeMessage('sendMessage')
-  async sendMessage(@MessageBody() sendMessage: { roomId: string, senderId: string, message: string }, @ConnectedSocket() client: Socket) {
+  async sendMessage(@MessageBody() sendMessage: SendMessageDto, @ConnectedSocket() client: Socket) {
     const user: User = client.handshake.auth.user;
     // Check if the user is a member of the room
     const isMember = await this.databaseService.roomMembership.findFirst({
@@ -42,7 +43,6 @@ export class MessagesGateway {
         userId: user.id,
       },
     });
-
     if (!isMember) {
       return;
     }
@@ -53,4 +53,33 @@ export class MessagesGateway {
       message: sendMessage.message
     });
   }
+
+  @SubscribeMessage('unReadMessage')
+  async unReadMessage(@MessageBody() roomId: string, @ConnectedSocket() client: Socket) {
+    const user: User = client.handshake.auth.user;
+    const getAllRoomMembers = await this.databaseService.user.findMany({
+      where: {
+        roomMemberships: {
+          some: {
+            roomId
+          }
+        }
+      }
+    })
+    
+    getAllRoomMembers.map((member) => {
+      if (member.id === user.id) {
+        this.server.emit("unReadMessage", "You got the message")
+      }
+    })
+  }
+  @SubscribeMessage('readMessages')
+  async readMessages(@MessageBody() readMessages: ReadMessageDto[], @ConnectedSocket() client: Socket) {
+    const user: User = client.handshake.auth.user;
+    if (user.id == readMessages[0].userId) {
+      this.server.emit("readMessages", readMessages)
+    }
+  }
+
+
 }

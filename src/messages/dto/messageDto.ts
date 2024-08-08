@@ -58,3 +58,12 @@ export class UnReadMessageDto {
     @IsNotEmpty()
     userId: string
 }
+
+export class DeleteMessageDto{
+    @IsString()
+    @IsNotEmpty()
+    messageId: string
+    @IsString()
+    @IsNotEmpty()
+    userId: string
+}

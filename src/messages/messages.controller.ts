@@ -1,15 +1,53 @@
-import { Controller, Post, UseGuards } from '@nestjs/common';
+import { Controller, Post, UseGuards, Request, Body, ValidationPipe, Patch, Param, Delete } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { DeleteMessageDto, GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
+import { MessagesGateway } from './messages.gateway';
 
 @Controller('messages')
 export class MessagesController {
-    public constructor(private readonly messageService: MessagesService) { }
+    public constructor(
+        private readonly messageService: MessagesService,
+        private readonly messageGateway: MessagesGateway
+    ) { }
 
     @UseGuards(AuthGuard)
     @Post()
-    async sendMessage() {
+    async sendMessage(@Body(ValidationPipe) sendMessageDto: SendMessageDto, @Request() req: any) {
+        this.messageGateway.sendMessage(sendMessageDto, req);
+        this.messageGateway.unReadMessage(sendMessageDto.roomId,req)
+        return await this.messageService.sendMessage(sendMessageDto);
+    }
 
+    @UseGuards(AuthGuard)
+    @Post()
+    async getUserMessages(@Body(ValidationPipe) getMessageDto: GetMessageDto) {
+        return await this.messageService.findUserMessages(getMessageDto);
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch()
+    async updateUserMessage(@Body(ValidationPipe) updateMessageDto: UpdateMessageDto) {
+        return await this.messageService.updateMessage(updateMessageDto)
+    }
+
+    @UseGuards(AuthGuard)
+    @Delete()
+    async deleteUserMessage(@Body(ValidationPipe) deleteMessageDto: DeleteMessageDto) {
+        return await this.messageService.deleteMessage(deleteMessageDto)
+    }
+
+    @UseGuards(AuthGuard)
+    @Post("unReadCount")
+    async unReadMessage(@Body(ValidationPipe) unReadMessageDto: UnReadMessageDto) {
+        return await this.messageService.unReadMessageCount(unReadMessageDto)
+    }
+
+    @UseGuards(AuthGuard)
+    @Post("readMessages")
+    async ReadMessages(@Body(ValidationPipe) readMessagesDto: ReadMessageDto[], @Request() req) {
+        this.messageGateway.readMessages(readMessagesDto, req)
+        return await this.messageService.readMessages(readMessagesDto)
     }
 
 }

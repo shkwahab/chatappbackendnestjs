@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
-import { GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
+import { DeleteMessageDto, GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
 
 
 @Injectable()
@@ -135,15 +135,15 @@ export class MessagesService {
         }
     }
 
-    async deleteMessage(messageId: string, userId: string) {
+    async deleteMessage(deleteMessageDto:DeleteMessageDto) {
         try {
             const messageMemberShip = await this.databaseService.messageMemberShip.findUnique({
                 where: {
-                    messageId
+                    messageId:deleteMessageDto.messageId
                 }
             })
-            if (messageMemberShip.senderId === userId) {
-                return await this.delete(messageId);
+            if (messageMemberShip.senderId === deleteMessageDto.userId) {
+                return await this.delete(deleteMessageDto.messageId);
             }
         } catch (error) {
             throw new BadRequestException("FAILED TO DELETE MESSAGE " + error)
