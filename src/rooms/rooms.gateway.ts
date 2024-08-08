@@ -33,11 +33,7 @@ export class RoomsGateway {
             throw new UnauthorizedException('Invalid token');
         }
     }
-    @SubscribeMessage('newRoom')
-    async newRoom(@MessageBody() newRoom: RoomDto) {
-        this.server.emit("newRoom", newRoom)
-    }
-
+    
     @SubscribeMessage('joinRoom')
     async joinRoom(@MessageBody() joinRoom: JoinRoomDto, @ConnectedSocket() client: Socket) {
         const user = client.handshake.auth.user;
@@ -57,27 +53,4 @@ export class RoomsGateway {
         }
     }
 
-    @SubscribeMessage('findAllRooms')
-    async findAll() {
-        const rooms = await this.roomsService.findAll();
-        this.server.emit('findAllRooms', rooms);
-    }
-
-    @SubscribeMessage('findOneRoom')
-    async findOne(@MessageBody() id: string) {
-        const room = await this.roomsService.findOne(id);
-        this.server.emit('findOneRoom', room);
-    }
-
-    @SubscribeMessage('updateRooms')
-    async update(@MessageBody() id: string, updateRoomsDto: Prisma.RoomsUpdateInput) {
-        const updatedRoom = await this.roomsService.update(id, updateRoomsDto);
-        this.server.emit('updateRooms', updatedRoom);
-    }
-
-    @SubscribeMessage('removeRooms')
-    async remove(@MessageBody() id: string) {
-        await this.roomsService.remove(id);
-        this.server.emit('removeRooms', id);
-    }
 }
