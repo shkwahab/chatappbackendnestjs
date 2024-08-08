@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
+import { GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
 
 
 @Injectable()
@@ -34,72 +35,72 @@ export class MessagesService {
         }
     }
 
-    async findUserMessages(userId: string, roomId: string, page: number = 1, limit: number = 10) {
-        const skip = (page - 1) * limit;
+    async findUserMessages(getMessageDto: GetMessageDto) {
+        const skip = (getMessageDto.page - 1) * getMessageDto.limit;
         try {
-          const totalCount = await this.databaseService.message.count({
-            where: {
-              messageMembership: {
-                some: {
-                  receiverId: userId,
-                  roomId: roomId,
+            const totalCount = await this.databaseService.message.count({
+                where: {
+                    messageMembership: {
+                        some: {
+                            receiverId: getMessageDto.userId,
+                            roomId: getMessageDto.roomId,
+                        },
+                    },
                 },
-              },
-            },
-          });
-    
-          const messages = await this.databaseService.message.findMany({
-            where: {
-              messageMembership: {
-                some: {
-                  receiverId: userId,
-                  roomId: roomId,
+            });
+
+            const messages = await this.databaseService.message.findMany({
+                where: {
+                    messageMembership: {
+                        some: {
+                            receiverId: getMessageDto.userId,
+                            roomId: getMessageDto.roomId,
+                        },
+                    },
                 },
-              },
-            },
-            skip,
-            take: limit,
-            orderBy: {
-              createdAt: 'desc', 
-            },
-          });
-    
-          const response = {
-            count: totalCount,
-            next: page * limit < totalCount ? `/messages/${userId}/rooms/${roomId}?page=${page + 1}&limit=${limit}` : null,
-            previous: page > 1 ? `/messages/${userId}/rooms/${roomId}?page=${page - 1}&limit=${limit}` : null,
-            result: messages,
-          };
-    
-          return response;
+                skip,
+                take: getMessageDto.limit,
+                orderBy: {
+                    createdAt: 'desc',
+                },
+            });
+
+            const response = {
+                count: totalCount,
+                next: getMessageDto.page * getMessageDto.limit < totalCount ? `/messages/${getMessageDto.userId}/rooms/${getMessageDto.roomId}?page=${getMessageDto.page + 1}&limit=${getMessageDto.limit}` : null,
+                previous: getMessageDto.page > 1 ? `/messages/${getMessageDto.userId}/rooms/${getMessageDto.roomId}?page=${getMessageDto.page - 1}&limit=${getMessageDto.limit}` : null,
+                result: messages,
+            };
+
+            return response;
         } catch (error) {
-          throw new BadRequestException('Failed to retrieve user messages: ' + error.message);
+            throw new BadRequestException('Failed to retrieve user messages: ' + error.message);
         }
-      }
-    async sendMessage(roomId: string, senderId: string, message: string, receiverId?: string) {
+    }
+    async sendMessage(sendMessageDto: SendMessageDto) {
         try {
-            const newmessage = await this.create({ message })
+            const newmessage = await this.create({ message: sendMessageDto.message })
             const sendMessage = await this.databaseService.messageMemberShip.create({
                 data: {
-                    senderId,
-                    receiverId,
+                    senderId: sendMessageDto.senderId,
+                    receiverId: sendMessageDto.receiverId,
                     messageId: newmessage.id,
-                    roomId
+                    roomId: sendMessageDto.roomId
                 }
             })
             await this.databaseService.messageStatus.create({
                 data: {
                     messageId: sendMessage.id,
-                    userId: senderId,
-                    roomId
+                    userId: sendMessageDto.senderId,
+                    roomId: sendMessageDto.roomId
                 }
             })
-            const sender = await this.databaseService.user.findUnique({ where: { id: senderId } })
-            if (receiverId) {
+            const sender = await this.databaseService.user.findUnique({ where: { id: sendMessageDto.senderId } })
+            if (sendMessageDto.receiverId) {
                 const notification = await this.databaseService.notifications.create({
                     data: {
                         event: "sendMessage",
-                        senderId: senderId,
+                        senderId: sendMessageDto.senderId,
                         message: `${sender.name} has sent you the message`,
                         type: "Message"
                     }
@@ -107,7 +108,7 @@ export class MessagesService {
 
                 await this.databaseService.notificationReceivers.create({
                     data: {
-                        receiverId,
+                        receiverId: sendMessageDto.receiverId,
                         notificationId: notification.id
                     }
                 })
@@ -118,15 +119,15 @@ export class MessagesService {
         }
     }
 
-    async updateMessage(messageId: string, userId: string, message: string) {
+    async updateMessage(updateMessageDto: UpdateMessageDto) {
         try {
             const messageMemberShip = await this.databaseService.messageMemberShip.findUnique({
                 where: {
-                    messageId
+                    messageId: updateMessageDto.messageId
                 }
             })
-            if (messageMemberShip.senderId === userId) {
-                return await this.update(messageId, { message });
+            if (messageMemberShip.senderId === updateMessageDto.userId) {
+                return await this.update(updateMessageDto.messageId, { message: updateMessageDto.message });
             }
 
         } catch (error) {
@@ -148,17 +149,17 @@ export class MessagesService {
             throw new BadRequestException("FAILED TO DELETE MESSAGE " + error)
         }
     }
-    async readMessage(messageId: string, userId: string, roomId: string) {
+    async readMessage(readMessageDto: ReadMessageDto) {
         try {
             const read = await this.databaseService.messageStatus.update({
                 data: {
-                    messageId,
-                    userId,
-                    roomId,
+                    messageId: readMessageDto.messageId,
+                    userId: readMessageDto.userId,
+                    roomId: readMessageDto.roomId,
                     isRead: true
                 },
                 where: {
-                    messageId
+                    messageId: readMessageDto.messageId
                 }
             })
             return read
@@ -166,10 +167,14 @@ export class MessagesService {
             throw new BadRequestException("FAILED TO READ MESSAGE" + error)
         }
     }
-    async readMessages(read: { messageId: string, userId: string, roomId: string }[]) {
+    async readMessages(read: ReadMessageDto[]) {
         try {
             const readPromises = read.map(item =>
-                this.readMessage(item.messageId, item.userId, item.roomId)
+                this.readMessage({
+                    userId: item.userId,
+                    roomId: item.roomId,
+                    messageId: item.messageId
+                })
             );
             await Promise.all(readPromises);
         } catch (error) {
@@ -177,13 +182,13 @@ export class MessagesService {
         }
     }
 
-    async unReadMessageCount(roomId: string, userId: string) {
+    async unReadMessageCount(unReadMessageDto: UnReadMessageDto) {
         try {
             const unRead = await this.databaseService.messageStatus.count({
                 where: {
                     isRead: false,
-                    userId,
-                    roomId
+                    userId: unReadMessageDto.userId,
+                    roomId: unReadMessageDto.roomId
                 }
             })
             return unRead
