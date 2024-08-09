@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, Request, Body, ValidationPipe, Patch, Delete } from '@nestjs/common';
+import { Controller, Post, UseGuards, Request, Body, ValidationPipe, Patch, Delete, Query } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { DeleteMessageDto, GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
@@ -18,14 +18,14 @@ export class MessagesController {
         const user: User = req.user
         const client = await this.messageGateway.findSocketById(user.id)
         this.messageGateway.sendMessage(sendMessageDto, client);
-        this.messageGateway.unReadMessage(sendMessageDto.roomId,client)
+        this.messageGateway.unReadMessage(sendMessageDto.roomId, client)
         return await this.messageService.sendMessage(sendMessageDto);
     }
 
     @UseGuards(AuthGuard)
     @Post()
-    async getUserMessages(@Body(ValidationPipe) getMessageDto: GetMessageDto) {
-        return await this.messageService.findUserMessages(getMessageDto);
+    async getUserMessages(@Body(ValidationPipe) getMessageDto: GetMessageDto, @Query("page") page: number=1, @Query("limit") limit: number=10) {
+        return await this.messageService.findUserMessages(getMessageDto, page, limit);
     }
 
     @UseGuards(AuthGuard)

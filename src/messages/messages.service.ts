@@ -35,8 +35,8 @@ export class MessagesService {
         }
     }
 
-    async findUserMessages(getMessageDto: GetMessageDto) {
-        const skip = (getMessageDto.page - 1) * getMessageDto.limit;
+    async findUserMessages(getMessageDto: GetMessageDto, page: number = 1, limit: number = 10) {
+        const skip = (page - 1) * limit;
         try {
             const totalCount = await this.databaseService.message.count({
                 where: {
@@ -59,7 +59,7 @@ export class MessagesService {
                     },
                 },
                 skip,
-                take: getMessageDto.limit,
+                take: limit,
                 orderBy: {
                     createdAt: 'desc',
                 },
@@ -67,8 +67,8 @@ export class MessagesService {
 
             const response = {
                 count: totalCount,
-                next: getMessageDto.page * getMessageDto.limit < totalCount ? `/messages/${getMessageDto.userId}/rooms/${getMessageDto.roomId}?page=${getMessageDto.page + 1}&limit=${getMessageDto.limit}` : null,
-                previous: getMessageDto.page > 1 ? `/messages/${getMessageDto.userId}/rooms/${getMessageDto.roomId}?page=${getMessageDto.page - 1}&limit=${getMessageDto.limit}` : null,
+                next: page * limit < totalCount ? `/messages/${getMessageDto.userId}?page=${page + 1}&limit=${limit}` : null,
+                previous: page > 1 ? `/messages/${getMessageDto.userId}?page=${page - 1}&limit=${limit}` : null,
                 result: messages,
             };
 
@@ -135,11 +135,11 @@ export class MessagesService {
         }
     }
 
-    async deleteMessage(deleteMessageDto:DeleteMessageDto) {
+    async deleteMessage(deleteMessageDto: DeleteMessageDto) {
         try {
             const messageMemberShip = await this.databaseService.messageMemberShip.findUnique({
                 where: {
-                    messageId:deleteMessageDto.messageId
+                    messageId: deleteMessageDto.messageId
                 }
             })
             if (messageMemberShip.senderId === deleteMessageDto.userId) {

@@ -7,10 +7,7 @@ export class GetMessageDto {
     @IsString()
     @IsNotEmpty()
     roomId: string
-    @IsNumber()
-    page: number = 1
-    @IsNumber()
-    limit: number = 10
+
 }
 
 export class SendMessageDto {

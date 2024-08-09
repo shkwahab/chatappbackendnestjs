@@ -130,21 +130,12 @@ export class RoomsService {
           }
         }
       })
-      const messages = await this.databaseService.message.findMany({
-        where: {
-          messageMembership: {
-            some: {
-              roomId: id
-            }
-          }
-        }
-      })
-
+    
       const users = roomusers.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
       if (!room) {
         throw new BadRequestException("No Room Found");
       }
-      return { room, users, messages };
+      return { room, users };
     } catch (error) {
       console.log(error)
       throw new BadRequestException(error)
