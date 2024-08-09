@@ -22,7 +22,7 @@ export class RoomsController {
     @UseGuards(AuthGuard)
     @Post("join")
     async joinRoom(@Body(ValidationPipe) joinRoomDto: JoinRoomDto, @Request() req) {
-        const user:User = req.user
+        const user: User = req.user
         const client = await this.roomsGateway.findSocketById(user.id)
         const room = await this.roomsService.joinRoom(joinRoomDto)
         await this.roomsGateway.joinRoom(joinRoomDto, client)
@@ -30,18 +30,22 @@ export class RoomsController {
     }
 
     @UseGuards(AuthGuard)
-    @Post("acceptInvitation")
-    async acceptInvitation(@Body() adminId: string, acceptInviteDto: AcceptInviteDto) {
-        const invite = await this.roomsService.acceptInvitation(adminId, acceptInviteDto);
-        // this.roomsGateway.acceptRoomInvitations(acceptInviteDto, req);
+    @Patch("acceptInvitation")
+    async acceptInvitation(@Body()  acceptInviteDto: AcceptInviteDto, @Request() req)  {
+        const invite = await this.roomsService.acceptInvitation(acceptInviteDto);
+        const user: User = req.user
+        const client = await this.roomsGateway.findSocketById(user.id)
+        this.roomsGateway.acceptRoomInvitations(acceptInviteDto, client);
         return invite
     }
 
     @UseGuards(AuthGuard)
     @Post("blockMember")
-    async blockMember(@Body() adminId: string, blockRoomMemberDto: BlockRoomMemberDto) {
-        const blockMember = await this.roomsService.acceptInvitation(adminId, blockRoomMemberDto);
-        // this.roomsGateway.blockMember(blockRoomMemberDto, req);
+    async blockMember(@Body() adminId: string, blockRoomMemberDto: BlockRoomMemberDto, @Request() req){
+        const blockMember = await this.roomsService.blockRoomUser(adminId, blockRoomMemberDto);
+        const user: User = req.user
+        const client = await this.roomsGateway.findSocketById(user.id)
+        this.roomsGateway.blockMember(blockRoomMemberDto, client);
         return blockMember
     }
 

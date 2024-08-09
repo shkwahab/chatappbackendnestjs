@@ -196,12 +196,12 @@ export class RoomsService {
     return roomMembership
   }
 
-  async acceptInvitation(adminId: string, acceptInviteDto: AcceptInviteDto) {
+  async acceptInvitation(acceptInviteDto: AcceptInviteDto) {
     try {
       const room = await this.databaseService.rooms.findUnique({ where: { id: acceptInviteDto.roomId } })
-      const sender = await this.databaseService.user.findUnique({ where: { id: adminId } })
+      const sender = await this.databaseService.user.findUnique({ where: { id: acceptInviteDto.adminId } })
 
-      if (room.adminId === adminId) {
+      if (room.adminId === acceptInviteDto.adminId) {
         const updateRoomMembership = await this.databaseService.roomMembership.update({
           where: { roomId: acceptInviteDto.roomId, userId: acceptInviteDto.userId },
           data: { isApproved: true }

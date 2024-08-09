@@ -43,6 +43,9 @@ export class JoinRoomDto {
 export class AcceptInviteDto {
   @IsString()
   @IsNotEmpty()
+  adminId: string;
+  @IsString()
+  @IsNotEmpty()
   userId: string;
   @IsNotEmpty()
   @IsString()
