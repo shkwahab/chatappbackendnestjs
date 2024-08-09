@@ -121,10 +121,30 @@ export class RoomsService {
       const room = await this.databaseService.rooms.findUnique({
         where: { id }
       });
+      const roomusers = await this.databaseService.user.findMany({
+        where: {
+          roomMemberships: {
+            some: {
+              roomId: id
+            }
+          }
+        }
+      })
+      const messages = await this.databaseService.message.findMany({
+        where: {
+          messageMembership: {
+            some: {
+              roomId: id
+            }
+          }
+        }
+      })
+
+      const users = roomusers.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
       if (!room) {
         throw new BadRequestException("No Room Found");
       }
-      return room;
+      return { room, users, messages };
     } catch (error) {
       console.log(error)
       throw new BadRequestException(error)
@@ -205,6 +225,19 @@ export class RoomsService {
         const updateRoomMembership = await this.databaseService.roomMembership.update({
           where: { roomId: acceptInviteDto.roomId, userId: acceptInviteDto.userId },
           data: { isApproved: true }
+        })
+        const notification = await this.databaseService.notifications.create({
+          data: {
+            senderId: acceptInviteDto.adminId,
+            message: `${sender.name} has accepted your request to join the ${room.name} room`,
+            type: "Message"
+          }
+        })
+        await this.databaseService.notificationReceivers.create({
+          data: {
+            notificationId:notification.id,
+            receiverId: acceptInviteDto.userId
+          }
         })
         return updateRoomMembership;
       }
