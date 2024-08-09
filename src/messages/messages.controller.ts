@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, Request, Body, ValidationPipe, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, UseGuards, Request, Body, ValidationPipe, Patch, Delete } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { DeleteMessageDto, GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
