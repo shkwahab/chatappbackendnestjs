@@ -54,12 +54,23 @@ export class RoomsController {
     }
 
     @UseGuards(AuthGuard)
-    @Get("invitations:id")
+    @Get("invitations/:id")
     async roomsInviation(@Param("id") id: string) {
         const rooms = await this.roomsService.findAllRoomsInvitation(id);
         return rooms;
     }
 
+       
+    @UseGuards(AuthGuard)
+    @Patch("blockMember/:id")
+    async blockMember(@Param("id") adminId: string, @Body() blockRoomMemberDto: BlockRoomMemberDto, @Request() req){
+        const blockMember = await this.roomsService.blockRoomUser(adminId, blockRoomMemberDto);
+        const user: User = req.user
+        const client = await this.roomsGateway.findSocketById(user.id)
+        this.roomsGateway.blockMember(blockRoomMemberDto, client);
+        return blockMember
+    }
+  
     @UseGuards(AuthGuard)
     @Get(":id")
     async findOne(@Param("id") id: string) {
@@ -74,16 +85,7 @@ export class RoomsController {
         return updatedRoom;
     }
 
-    @UseGuards(AuthGuard)
-    @Patch("blockMember:id")
-    async blockMember(@Param("id") adminId: string, @Body() blockRoomMemberDto: BlockRoomMemberDto, @Request() req){
-        const blockMember = await this.roomsService.blockRoomUser(adminId, blockRoomMemberDto);
-        const user: User = req.user
-        const client = await this.roomsGateway.findSocketById(user.id)
-        this.roomsGateway.blockMember(blockRoomMemberDto, client);
-        return blockMember
-    }
-
+ 
 
     @UseGuards(AuthGuard)
     @Delete(':id')
@@ -91,4 +93,7 @@ export class RoomsController {
         await this.roomsService.remove(id);
         return { message: "deleted successfully" };
     }
+
+  
+
 }
