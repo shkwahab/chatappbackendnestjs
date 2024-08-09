@@ -1,15 +1,15 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseGuards, ValidationPipe } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { RoomsService } from './rooms.service';
-import { RoomsGateway } from './rooms.gateway'; // Import RoomsGateway
 import { AuthGuard } from 'src/auth/auth.guard';
 import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto } from './dto/room.dto';
+import { RoomsGateway } from './rooms.gateway';
 
 @Controller('rooms')
 export class RoomsController {
     constructor(
         private readonly roomsService: RoomsService,
-        private readonly roomsGateway: RoomsGateway // Inject RoomsGateway
+        private readonly roomsGateway: RoomsGateway,
     ) { }
 
     @UseGuards(AuthGuard)
@@ -21,40 +21,42 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Post("join")
-    async joinRoom(@Body(ValidationPipe) joinRoomDto: JoinRoomDto) {
+    async joinRoom(@Body(ValidationPipe) joinRoomDto: JoinRoomDto, @Request() req) {
+        const user:User = req.user
+        const client = await this.roomsGateway.findSocketById(user.id)
         const room = await this.roomsService.joinRoom(joinRoomDto)
-        // this.roomsGateway.joinRoom(joinRoomDto, req.user)
+        await this.roomsGateway.joinRoom(joinRoomDto, client)
         return room;
     }
 
     @UseGuards(AuthGuard)
     @Post("acceptInvitation")
-    async acceptInvitation(@Body() adminId: string, acceptInviteDto: AcceptInviteDto, @Request() req: any) {
+    async acceptInvitation(@Body() adminId: string, acceptInviteDto: AcceptInviteDto) {
         const invite = await this.roomsService.acceptInvitation(adminId, acceptInviteDto);
-        this.roomsGateway.acceptRoomInvitations(acceptInviteDto, req);
+        // this.roomsGateway.acceptRoomInvitations(acceptInviteDto, req);
         return invite
     }
 
     @UseGuards(AuthGuard)
     @Post("blockMember")
-    async blockMember(@Body() adminId: string, blockRoomMemberDto: BlockRoomMemberDto, @Request() req: any) {
+    async blockMember(@Body() adminId: string, blockRoomMemberDto: BlockRoomMemberDto) {
         const blockMember = await this.roomsService.acceptInvitation(adminId, blockRoomMemberDto);
-        this.roomsGateway.blockMember(blockRoomMemberDto, req);
+        // this.roomsGateway.blockMember(blockRoomMemberDto, req);
         return blockMember
     }
 
 
     @UseGuards(AuthGuard)
     @Get()
-    async findAll(@Query("page") page?:number) {
+    async findAll(@Query("page") page?: number) {
         const rooms = await this.roomsService.findAll(page);
         return rooms;
     }
 
     @UseGuards(AuthGuard)
     @Get("admin")
-    async findAllAdminRooms(@Param("id") id:string, @Query("page") page?:number) {
-        const rooms = await this.roomsService.findAllAdminRooms(id,page);
+    async findAllAdminRooms(@Param("id") id: string, @Query("page") page?: number) {
+        const rooms = await this.roomsService.findAllAdminRooms(id, page);
         return rooms;
     }
 

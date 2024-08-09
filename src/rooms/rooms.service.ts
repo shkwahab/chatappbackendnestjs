@@ -248,7 +248,7 @@ export class RoomsService {
             roomId: blockRoomMemberDto.roomId,
             isBlocked: true
           },
-          where: { roomId: blockRoomMemberDto.roomId,userId:blockRoomMemberDto.userId }
+          where: { roomId: blockRoomMemberDto.roomId, userId: blockRoomMemberDto.userId }
         })
         const notification = await this.databaseService.notifications.create({
           data: {
