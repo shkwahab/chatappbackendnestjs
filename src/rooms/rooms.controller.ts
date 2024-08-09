@@ -40,17 +40,6 @@ export class RoomsController {
     }
 
     @UseGuards(AuthGuard)
-    @Post("blockMember")
-    async blockMember(@Body() adminId: string, blockRoomMemberDto: BlockRoomMemberDto, @Request() req){
-        const blockMember = await this.roomsService.blockRoomUser(adminId, blockRoomMemberDto);
-        const user: User = req.user
-        const client = await this.roomsGateway.findSocketById(user.id)
-        this.roomsGateway.blockMember(blockRoomMemberDto, client);
-        return blockMember
-    }
-
-
-    @UseGuards(AuthGuard)
     @Get()
     async findAll(@Query("page") page?: number) {
         const rooms = await this.roomsService.findAll(page);
@@ -84,6 +73,17 @@ export class RoomsController {
         const updatedRoom = await this.roomsService.update(id, updateRoomDto);
         return updatedRoom;
     }
+
+    @UseGuards(AuthGuard)
+    @Patch("blockMember:id")
+    async blockMember(@Param("id") adminId: string, @Body() blockRoomMemberDto: BlockRoomMemberDto, @Request() req){
+        const blockMember = await this.roomsService.blockRoomUser(adminId, blockRoomMemberDto);
+        const user: User = req.user
+        const client = await this.roomsGateway.findSocketById(user.id)
+        this.roomsGateway.blockMember(blockRoomMemberDto, client);
+        return blockMember
+    }
+
 
     @UseGuards(AuthGuard)
     @Delete(':id')

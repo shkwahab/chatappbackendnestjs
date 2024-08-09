@@ -122,9 +122,8 @@ export class RoomsGateway {
 
         const adminId = await this.roomsService.findAdminByRoom(blockMemberDto.roomId);
 
-        if (adminId === user.id) {
-            this.server.emit('blockMember', blockMemberDto);
-        }
+        const adminSocket=this.userSocketMap.get(adminId)
+        this.server.to(adminSocket.id).emit('blockMember', blockMemberDto);
     }
 }
 
