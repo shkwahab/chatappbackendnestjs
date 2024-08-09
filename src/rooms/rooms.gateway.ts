@@ -15,7 +15,6 @@ export class RoomsGateway {
     client: Socket;
 
     private userSocketMap: Map<string, Socket> = new Map()
-    private users: Map<string, string> = new Map(); // userId -> socketId
     constructor(
         // private readonly roomsService: RoomsService,
         private readonly dbService: DatabaseService,
@@ -41,10 +40,7 @@ export class RoomsGateway {
                 secret: process.env.ACCESS_SECRET_KEY,
             });
             client.handshake.auth = { user: payload }; // Ensure auth is initialized
-            console.log(client.id)
-            console.log(payload.id)
             this.userSocketMap.set(payload.id, client); // Add client to map
-            console.log('User authenticated and stored in handshake:', payload);
             return client
         } catch (error) {
             client.disconnect();
@@ -73,12 +69,9 @@ export class RoomsGateway {
     async joinRoom(@MessageBody() joinRoom: JoinRoomDto, @ConnectedSocket() client: Socket) {
         const user = client.handshake.auth?.user;
 
-
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
         }
-
-        console.log('User:', user);
 
         const room = await this.dbService.rooms.findUnique({ where: { id: joinRoom.roomId } });
 

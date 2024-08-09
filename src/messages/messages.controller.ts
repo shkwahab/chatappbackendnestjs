@@ -3,6 +3,7 @@ import { MessagesService } from './messages.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { DeleteMessageDto, GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
 import { MessagesGateway } from './messages.gateway';
+import { User } from '@prisma/client';
 
 @Controller('messages')
 export class MessagesController {
@@ -14,8 +15,10 @@ export class MessagesController {
     @UseGuards(AuthGuard)
     @Post()
     async sendMessage(@Body(ValidationPipe) sendMessageDto: SendMessageDto, @Request() req: any) {
-        this.messageGateway.sendMessage(sendMessageDto, req);
-        this.messageGateway.unReadMessage(sendMessageDto.roomId,req)
+        const user: User = req.user
+        const client = await this.messageGateway.findSocketById(user.id)
+        this.messageGateway.sendMessage(sendMessageDto, client);
+        this.messageGateway.unReadMessage(sendMessageDto.roomId,client)
         return await this.messageService.sendMessage(sendMessageDto);
     }
 
@@ -46,7 +49,9 @@ export class MessagesController {
     @UseGuards(AuthGuard)
     @Post("readMessages")
     async ReadMessages(@Body(ValidationPipe) readMessagesDto: ReadMessageDto[], @Request() req) {
-        this.messageGateway.readMessages(readMessagesDto, req)
+        const user: User = req.user
+        const client = await this.messageGateway.findSocketById(user.id)
+        this.messageGateway.readMessages(readMessagesDto, client)
         return await this.messageService.readMessages(readMessagesDto)
     }
 
