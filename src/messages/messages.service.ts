@@ -53,7 +53,6 @@ export class MessagesService {
                 where: {
                     messageMembership: {
                         some: {
-                            receiverId: getMessageDto.userId,
                             roomId: getMessageDto.roomId,
                         },
                     },
@@ -64,12 +63,42 @@ export class MessagesService {
                     createdAt: 'desc',
                 },
             });
+            const messageMembersShip = async (messageId) => {
+                const memberShip = await this.databaseService.messageMemberShip.findUnique({
+                    where: {
+                        messageId
+                    }
+                });
+                const senderUser = await this.databaseService.user.findUnique({
+                    where: {
+                        id: memberShip.senderId
+                    }
+                });
+                const receiverUser = await this.databaseService.user.findUnique({
+                    where: {
+                        id: memberShip.receiverId
+                    }
+                });
+                const { password: senderPassword, ...sender } = senderUser;
+                const { password: receiverPassword, ...receiver } = receiverUser;
+                return { sender, receiver };
+            };
+
+            const results = await Promise.all(messages.map(async (item) => {
+                const memberShip = await messageMembersShip(item.id);
+
+                return {
+                    ...item,  
+                    sender: memberShip.sender,
+                    receiver: memberShip.receiver
+                };
+            }));
 
             const response = {
                 count: totalCount,
                 next: page * limit < totalCount ? `/messages/${getMessageDto.userId}?page=${page + 1}&limit=${limit}` : null,
                 previous: page > 1 ? `/messages/${getMessageDto.userId}?page=${page - 1}&limit=${limit}` : null,
-                result: messages,
+                results,
             };
 
             return response;
