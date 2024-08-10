@@ -25,6 +25,7 @@ model User {
   messageStatuses       MessageStatus[]
   notificationSender    Notifications[]         @relation("notificationSender")
   NotificationReceivers NotificationReceivers[]
+  Notifier              Notifier[]
 }
 
 model Rooms {
@@ -122,6 +123,20 @@ model NotificationReceivers {
 
   @@unique([notificationId, receiverId])
 }
+
+
+model Notifier {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String  @db.ObjectId
+  endpoint  String
+  keys      Json
+  userAgent String?
+  deviceId  String?
+  
+  user      User      @relation(fields: [userId],references: [id])
+  @@unique([userId, endpoint])
+}
+
 
 enum UserRole {
   USER

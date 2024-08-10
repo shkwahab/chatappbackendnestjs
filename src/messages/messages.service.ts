@@ -2,11 +2,16 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { DeleteMessageDto, GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
+import { NotificationService } from 'src/notification/notification.service';
 
 
 @Injectable()
 export class MessagesService {
-    constructor(private databaseService: DatabaseService) { }
+    constructor(
+        private databaseService: DatabaseService,
+        private readonly notifierService: NotificationService
+
+    ) { }
 
     async create(createMessageDto: Prisma.MessageCreateInput) {
         try {
@@ -88,7 +93,7 @@ export class MessagesService {
                 const memberShip = await messageMembersShip(item.id);
 
                 return {
-                    ...item,  
+                    ...item,
                     sender: memberShip.sender,
                     receiver: memberShip.receiver
                 };
@@ -141,6 +146,8 @@ export class MessagesService {
                         notificationId: notification.id
                     }
                 })
+                const notifierUrl = process.env.SITE_URL
+                await this.notifierService.sendPushNotification(notification.id, notifierUrl)
             }
             return sendMessage
         } catch (error) {

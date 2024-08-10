@@ -1,12 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException, Param, Query } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto } from './dto/room.dto';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class RoomsService {
   public constructor(
     private readonly databaseService: DatabaseService,
+    private readonly notifierService: NotificationService
   ) { }
 
   async create(createRoomDto: CreateRoomDto) {
@@ -130,7 +132,7 @@ export class RoomsService {
           }
         }
       })
-    
+
       const users = roomusers.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
       if (!room) {
         throw new BadRequestException("No Room Found");
@@ -200,9 +202,12 @@ export class RoomsService {
 
       }
     })
+
     await this.databaseService.notificationReceivers.create({
       data: { notificationId: notification.id, receiverId }
     })
+    const notifierUrl = process.env.SITE_URL
+    await this.notifierService.sendPushNotification(notification.id, notifierUrl)
 
     return roomMembership
   }
@@ -226,10 +231,12 @@ export class RoomsService {
         })
         await this.databaseService.notificationReceivers.create({
           data: {
-            notificationId:notification.id,
+            notificationId: notification.id,
             receiverId: acceptInviteDto.userId
           }
         })
+        const notifierUrl = process.env.SITE_URL
+        await this.notifierService.sendPushNotification(notification.id, notifierUrl)
         return updateRoomMembership;
       }
 
@@ -245,6 +252,8 @@ export class RoomsService {
       await this.databaseService.notificationReceivers.create({
         data: { notificationId: notification.id, receiverId: acceptInviteDto.userId }
       })
+      const notifierUrl = process.env.SITE_URL
+      await this.notifierService.sendPushNotification(notification.id, notifierUrl)
 
     } catch (error) {
 
@@ -286,6 +295,8 @@ export class RoomsService {
         await this.databaseService.notificationReceivers.create({
           data: { notificationId: notification.id, receiverId: blockUser.id }
         })
+        const notifierUrl = process.env.SITE_URL
+        await this.notifierService.sendPushNotification(notification.id, notifierUrl)
         return blockUser
       }
       throw new BadRequestException("Only Admin has right to block the group user")

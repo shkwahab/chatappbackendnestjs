@@ -1,10 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
-
+import * as webPush from 'web-push';
+import { Key, SubscriptionDto } from './dto/notifierDto';
 
 @Injectable()
 export class NotificationService {
     public constructor(public readonly databaseService: DatabaseService) { }
+
+    async subscribe(subscriptonDto: SubscriptionDto) {
+        try {
+            const subscriber = await this.databaseService.notifier.create({
+                data: subscriptonDto
+            })
+            return subscriber
+        } catch (error) {
+            throw new BadRequestException(error)
+        }
+    }
+
+
 
     async findAll(userId: string, page: number = 1) {
         const PAGE_SIZE = 10;
@@ -51,5 +65,44 @@ export class NotificationService {
         return paginatedNotifications;
     }
 
+    async sendPushNotification(notificationId: string,url:string) {
+        try {
+            const notification = await this.databaseService.notifications.findUnique({
+                where: {
+                    id: notificationId
+                }
+            })
+            const NotificationReceivers = await this.databaseService.notificationReceivers.findMany({
+                where: {
+                    notificationId
+                }
+            })
+            const receiverIds = NotificationReceivers.map(receiver => receiver.receiverId);
+            const subscribers = await this.databaseService.notifier.findMany({
+                where: {
+                    userId: { in: receiverIds }
+                }
+            });
+            for (const subscriber of subscribers) {
+                try {
+                    const pushSubscription = {
+                        endpoint: subscriber.endpoint,
+                        keys: subscriber.keys as Key
+                    };
+                    await webPush.sendNotification(pushSubscription, JSON.stringify({
+                        title: "Chat App",
+                        body: notification.message,
+                        icon: process.env.APP_ICON,
+                        url
+                    }));
+                } catch (error) {
+                    console.error('Error sending notification:', error);
+                }
+            }
+
+        } catch (error) {
+            throw new BadRequestException(error)
+        }
+    }
 
 }
