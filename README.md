@@ -62,6 +62,7 @@ This is the backend for a chat application built with [Nest.js](https://nestjs.c
    pnpm i
    ```
 3. Create an .env file in the root directory with the following content and replace the keys according to your requirements:
+```bash
 
 DATABASE_URL            =     "mongodb://localhost:27017/chatapp"
 ACCESS_SECRET_KEY       =     "JDzIBEsLl9PZOdYp4eQa/IPTgwNVfA2ts2+0lw6Whpc="
@@ -71,7 +72,7 @@ WEB_PUSH_PRIVATE_KEY    =     "3mvz9AabmvZ3xqxcVGq9Y4isavxiUMm5nmzFhVSoBm0"
 WEB_PUSH_MAIL           =     "yourname@emailprovider.com"
 APP_ICON                =     "https://myapp.com/logo.svg"
 SITE_URL                =     "https://myapp.com"   
-
+```
 
 4. Set up MongoDB replica set (default port is 27017). 
 
