@@ -22,7 +22,6 @@ async function bootstrap() {
         callback(new Error('Not allowed by CORS'));
       }
     }
-
   })
   app.useWebSocketAdapter(new IoAdapter(app));
   await app.listen(8000);
