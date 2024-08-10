@@ -48,8 +48,8 @@ This is the backend for a chat application built with [Nest.js](https://nestjs.c
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-repo/chat-app-backend.git
-   cd chat-app-backend
+   git clone https://github.com/shkwahab/chatappbackendnestjs.git
+   cd chatappbackendnestjs
    ```
 2. Install the dependency if you dont have pnpm package manage than follow this setup:
 
