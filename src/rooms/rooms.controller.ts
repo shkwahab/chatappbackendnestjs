@@ -135,7 +135,7 @@ export class RoomsController {
     })
     @ApiOperation({ summary: 'Block User by Room Admin Id' }) // Description of the endpoint
     @ApiResponse({ status: 201, description: 'Block User by Room Admin Id.' }) // Success response
-    @ApiBody({type:BlockRoomMemberDto})
+    @ApiBody({ type: BlockRoomMemberDto })
     @ApiParam({ name: "id", type: String })
     @ApiResponse({ status: 401, description: 'UnAuthorized.' }) // Error response
     @ApiResponse({ status: 400, description: 'Only Admin has right to block the user only.' }) // Error response
@@ -163,11 +163,9 @@ export class RoomsController {
     @ApiResponse({ status: 401, description: 'UnAuthorized.' }) // Error response
     @ApiResponse({ status: 400, description: 'Only Admin has right to update the room.' }) // Error response
     async update(@Param("id") id: string, @Body() updateRoomDto: Prisma.RoomsUpdateInput) {
-        const updatedRoom = await this.roomsService.update(id,  updateRoomDto);
+        const updatedRoom = await this.roomsService.update(id, updateRoomDto);
         return updatedRoom;
     }
-
-
 
     @UseGuards(AuthGuard)
     @Delete(':id')
@@ -178,7 +176,7 @@ export class RoomsController {
         example: 'Bearer token',
     })
     @ApiOperation({ summary: 'Delete Room by Room Id' }) // Description of the endpoint
-    @ApiResponse({ status: 201, description: 'Room Deleted Successfully.'}) // Success response
+    @ApiResponse({ status: 201, description: 'Room Deleted Successfully.' }) // Success response
     @ApiParam({ name: "id", type: String })
     @ApiResponse({ status: 401, description: 'UnAuthorized.' }) // Error response
     async remove(@Param('id') id: string) {
