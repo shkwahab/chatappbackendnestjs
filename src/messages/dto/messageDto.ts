@@ -1,24 +1,30 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator"
+import { ApiProperty } from "@nestjs/swagger"
+import { IsNotEmpty,  IsString } from "class-validator"
 
 export class GetMessageDto {
+    @ApiProperty()
     @IsString()
     @IsNotEmpty()
     userId: string
+    @ApiProperty()
     @IsString()
     @IsNotEmpty()
     roomId: string
-
+    
 }
 
 export class SendMessageDto {
+    @ApiProperty()
     @IsString()
     @IsNotEmpty()
     roomId: string
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     senderId: string
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     message: string
     receiverId?: string
 }
@@ -26,12 +32,15 @@ export class SendMessageDto {
 export class UpdateMessageDto {
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     messageId: string
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     userId: string
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     message: string
 }
 
@@ -39,28 +48,35 @@ export class UpdateMessageDto {
 export class ReadMessageDto {
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     messageId: string
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     userId: string
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     roomId: string
 }
 export class UnReadMessageDto {
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     roomId: string
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     userId: string
 }
 
 export class DeleteMessageDto{
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     messageId: string
     @IsString()
     @IsNotEmpty()
+    @ApiProperty()
     userId: string
 }
