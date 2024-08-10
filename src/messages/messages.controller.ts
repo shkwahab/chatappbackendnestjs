@@ -4,7 +4,7 @@ import { AuthGuard } from 'src/auth/auth.guard';
 import { DeleteMessageDto, GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
 import { MessagesGateway } from './messages.gateway';
 import { User } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags("messages")
 @Controller('messages')
@@ -16,12 +16,7 @@ export class MessagesController {
 
     @UseGuards(AuthGuard)
     @Post()
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Send the message' }) // Description of the endpoint
     @ApiBody({ type: SendMessageDto })
     @ApiResponse({ status: 201, description: 'Message Sent Successfully.' }) // Success response
@@ -36,12 +31,7 @@ export class MessagesController {
 
     @UseGuards(AuthGuard)
     @Post()
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Get the messages of User by Room Id' }) // Description of the endpoint
     @ApiBody({ type: SendMessageDto })
     @ApiQuery({ name: "page", required: false })
@@ -54,12 +44,7 @@ export class MessagesController {
 
     @UseGuards(AuthGuard)
     @Patch()
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Update the messages of User by Room Id' }) // Description of the endpoint
     @ApiBody({ type: UpdateMessageDto })
     @ApiResponse({ status: 201, description: 'Message Updated Successfully.' }) // Success response
@@ -70,12 +55,7 @@ export class MessagesController {
 
     @UseGuards(AuthGuard)
     @Delete()
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Delete the messages of User by Room Id' }) // Description of the endpoint
     @ApiBody({ type: DeleteMessageDto })
     @ApiResponse({ status: 201, description: 'Message Deleted Successfully.' }) // Success response
@@ -86,12 +66,7 @@ export class MessagesController {
 
     @UseGuards(AuthGuard)
     @Post("unReadCount")
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Return the lenght of unRead Messages' }) // Description of the endpoint
     @ApiBody({ type:UnReadMessageDto })
     @ApiResponse({ status: 201, description: 'UnRead Messages length.' }) // Success response
@@ -102,12 +77,7 @@ export class MessagesController {
 
     @UseGuards(AuthGuard)
     @Post("readMessages")
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Read the messages by message id' }) // Description of the endpoint
     @ApiBody({ type:[ReadMessageDto] })
     @ApiResponse({ status: 201, description: 'Messages Read Successfully.' }) // Success response

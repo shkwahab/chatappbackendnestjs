@@ -41,6 +41,7 @@ This is the backend for a chat application built with [Nest.js](https://nestjs.c
 - **Prisma**: ORM (Object-Relational Mapping) for database access and management.
 - **Socket.io**: Library for real-time communication.
 - **Web Push**: Technology for sending push notifications to users.
+- **Swagger Documentation**: Api Documentation.
 
 
 ### Setup
@@ -92,7 +93,9 @@ pnpm start
 ```
 
 
-## API Documentation
+## Swagger API Documentation
+
+Run the server visit: [localhost:8000/api-docs](http://localhost:8000/api-docs/)
 
 ### Notifications
 

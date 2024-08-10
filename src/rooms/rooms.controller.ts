@@ -4,7 +4,7 @@ import { RoomsService } from './rooms.service';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, GetRoomDto, JoinRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
 import { RoomsGateway } from './rooms.gateway';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiHeader, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 
 
 @ApiTags("rooms")
@@ -17,12 +17,7 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Post()
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new room' }) // Description of the endpoint
     @ApiBody({ type: CreateRoomDto })
     @ApiResponse({ status: 201, description: 'Room created successfully.' }) // Success response
@@ -34,12 +29,7 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Post("join")
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Join Room' }) // Description of the endpoint
     @ApiBody({ type: JoinRoomDto })
     @ApiResponse({ status: 201, description: 'Join Room Request Sent Successfully.' }) // Success response
@@ -54,12 +44,7 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Patch("acceptInvitation")
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Accept Invitation Room' }) // Description of the endpoint
     @ApiBody({ type: AcceptInviteDto })
     @ApiResponse({ status: 201, description: 'Admin has accepted your request to join room.' }) // Success response
@@ -74,12 +59,7 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Get()
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Get All Rooms' }) // Description of the endpoint
     @ApiResponse({ status: 200, description: 'List of Rooms.', type: GetRoomDto }) // Success response
     @ApiQuery({ name: "page", type: Number, required: false })
@@ -91,12 +71,7 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Get("user")
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Get All Rooms of User' }) // Description of the endpoint
     @ApiResponse({ status: 200, description: 'List of Rooms by User Id.', type: GetRoomDto }) // Success response
     @ApiQuery({ name: "page", type: Number, required: false })
@@ -109,12 +84,7 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Get("invitations/:id")
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Get All Rooms Invitations by Room Id' }) // Description of the endpoint
     @ApiResponse({ status: 200, description: 'List of Invitations by Room Id.', type: [RoomsInviationDto] }) // Success response
     @ApiParam({ name: "id", type: String })
@@ -127,12 +97,7 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Patch("blockMember/:id")
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Block User by Room Admin Id' }) // Description of the endpoint
     @ApiResponse({ status: 201, description: 'Block User by Room Admin Id.' }) // Success response
     @ApiBody({ type: BlockRoomMemberDto })
@@ -151,12 +116,7 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Patch(":id")
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Update Room by Room Id and Admin Id' }) // Description of the endpoint
     @ApiResponse({ status: 201, description: 'Room Updated Successfully.', type: RoomsUpdateDto }) // Success response
     @ApiParam({ name: "id", type: String })
@@ -169,12 +129,7 @@ export class RoomsController {
 
     @UseGuards(AuthGuard)
     @Delete(':id')
-    @ApiHeader({
-        name: 'Authorization',
-        description: 'Bearer token used for authentication',
-        required: true,
-        example: 'Bearer token',
-    })
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Delete Room by Room Id' }) // Description of the endpoint
     @ApiResponse({ status: 201, description: 'Room Deleted Successfully.' }) // Success response
     @ApiParam({ name: "id", type: String })
