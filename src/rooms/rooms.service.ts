@@ -72,14 +72,14 @@ export class RoomsService {
     }
   }
 
-  async findAllAdminRooms(id: string, page: number = 1) {
+  async findAllUserRooms(id: string, page: number = 1) {
     const limit = 10;
     const skip = (page - 1) * limit;
 
     try {
-      // Get total count of rooms for the admin
+      // Get total count of rooms for the admin 
       const totalCount = await this.databaseService.rooms.count({
-        where: { adminId: id },
+        where: { adminId:id },
       });
 
       // Fetch rooms with pagination for the given admin
@@ -106,8 +106,8 @@ export class RoomsService {
       // Construct response
       const response = {
         count: totalCount,
-        next: page * limit < totalCount ? `/rooms/admin/${id}?page=${page + 1}` : null,
-        previous: page > 1 ? `/admin/rooms/${id}?page=${page - 1}` : null,
+        next: page * limit < totalCount ? `/rooms/user/${id}?page=${page + 1}` : null,
+        previous: page > 1 ? `/rooms/user/${id}?page=${page - 1}` : null,
         result: roomsWithLastMessage,
       };
 
@@ -152,10 +152,11 @@ export class RoomsService {
       if (!room) {
         throw new BadRequestException("No Room Found");
       }
-      return await this.databaseService.rooms.update({
-        where: { id },
-        data: { ...updateRoomDto, updatedAt: new Date() }
-      });
+        return await this.databaseService.rooms.update({
+          where: { id },
+          data: { ...updateRoomDto, updatedAt: new Date() }
+        });
+      
     } catch (error) {
       throw new BadRequestException(error);
     }

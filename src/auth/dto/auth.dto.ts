@@ -1,10 +1,13 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsString } from "class-validator"
 
 export class AuthDto {
+    @ApiProperty()
     @IsString()
     @IsNotEmpty()
     @IsEmail()
     email: string
+    @ApiProperty()
     @IsString()
     @IsNotEmpty()
     password: string
@@ -20,8 +23,24 @@ export class UserDto {
     updatedAt: Date;
 }
 
-export class verifyToken{
+export class verifyToken {
+    @ApiProperty()
     @IsString()
+    @ApiProperty()
     @IsNotEmpty()
-    refreshToken:string
+    refreshToken: string
+}
+
+
+export class AuthenticatedCredentialResponse {
+    @ApiProperty()
+    id: string;
+    @ApiProperty()
+    token: string;
+    @ApiProperty()
+    refreshToken: string;
+}
+export class RefreshResponse {
+    @ApiProperty()
+    token: string;
 }
