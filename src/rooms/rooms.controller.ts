@@ -22,11 +22,11 @@ export class RoomsController {
     @ApiBody({ type: CreateRoomWithMembersDto })
     @ApiResponse({ status: 201, description: 'Room created successfully.' }) 
     @ApiResponse({ status: 400, description: 'Bad Request.' }) 
-    async create(@Body(ValidationPipe) createRoomDto: CreateRoomDto, memberRoomDto: MemberRoomDto[], @Request() req) {
+    async create(@Body(ValidationPipe) createRoomWithMemberDto: CreateRoomWithMembersDto, @Request() req) {
         const user: User = req.user
         const client = await this.roomsGateway.findSocketById(user.id)
-        await this.roomsGateway.createRoom(memberRoomDto, client)
-        const room = await this.roomsService.create(createRoomDto, memberRoomDto);
+        await this.roomsGateway.createRoom(createRoomWithMemberDto.members, client)
+        const room = await this.roomsService.create(createRoomWithMemberDto.room, createRoomWithMemberDto.members);
         return room;
     }
 
