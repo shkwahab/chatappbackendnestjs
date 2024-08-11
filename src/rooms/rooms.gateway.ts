@@ -2,11 +2,12 @@ import { SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websocke
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
-import { AcceptInviteDto, BlockRoomMemberDto, JoinRoomDto } from './dto/room.dto';
+import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRoomDto, RoomDto } from './dto/room.dto';
 import { UnauthorizedException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { isUndefined } from 'util';
 import { RoomsService } from './rooms.service';
+import { User } from '@prisma/client';
 
 @WebSocketGateway({ namespace: 'rooms' })
 export class RoomsGateway {
@@ -67,7 +68,7 @@ export class RoomsGateway {
     // Convert DTO to a plain object before emitting
     @SubscribeMessage('joinRoom')
     async joinRoom(@MessageBody() joinRoom: JoinRoomDto, @ConnectedSocket() client: Socket) {
-        const user = client.handshake.auth?.user;
+        const user: User = client.handshake.auth?.user;
 
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
@@ -85,6 +86,21 @@ export class RoomsGateway {
             this.server.to(adminSocket.id).emit('joinRoom', joinRoom);
         }
     }
+    
+    @SubscribeMessage('sentInvitation')
+    async createRoom(@MessageBody() sentInvitation: MemberRoomDto[], @ConnectedSocket() client: Socket) {
+        const user = client.handshake.auth?.user;
+        if (!user) {
+            throw new UnauthorizedException('User not authenticated');
+        }
+        const requestedMembers = sentInvitation.map((member) => {
+            return this.userSocketMap.get(member.userId);
+        }).filter(member => member); 
+    
+        requestedMembers.forEach((member) => {
+            this.server.to(member.id).emit('joinRequest', sentInvitation);
+        });
+    }
 
 
     @SubscribeMessage('acceptInvitation')
@@ -99,7 +115,7 @@ export class RoomsGateway {
         console.log(`Client joined room ${acceptInviteDto.roomId}`);
 
         const inviteuser = await this.dbService.user.findUnique({ where: { id: acceptInviteDto.userId } });
-        const inviteUserSocket =this.userSocketMap.get(inviteuser.id)
+        const inviteUserSocket = this.userSocketMap.get(inviteuser.id)
         if (inviteuser && inviteuser.id === user.id) {
             this.server.to(inviteUserSocket.id).emit('acceptInvitation', acceptInviteDto);
         }
@@ -115,7 +131,7 @@ export class RoomsGateway {
 
         const adminId = await this.roomsService.findAdminByRoom(blockMemberDto.roomId);
 
-        const adminSocket=this.userSocketMap.get(adminId)
+        const adminSocket = this.userSocketMap.get(adminId)
         this.server.to(adminSocket.id).emit('blockMember', blockMemberDto);
     }
 }

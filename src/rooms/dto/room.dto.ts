@@ -2,6 +2,12 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Prisma } from "@prisma/client";
 import { IsNotEmpty, IsString } from "class-validator";
 
+export class MemberRoomDto {
+  @ApiProperty({
+    required:false
+  })
+  userId: string
+}
 export class CreateRoomDto {
   @ApiProperty()
   @IsNotEmpty()
@@ -137,11 +143,11 @@ export class BlockRoomMemberDto {
 
 
 export class RoomsUpdateDto {
-  @ApiProperty({required:false})
+  @ApiProperty({ required: false })
   name?: string
-  @ApiProperty({required:false})
+  @ApiProperty({ required: false })
   img?: string
-  @ApiProperty({required:false})
+  @ApiProperty({ required: false })
   isPublic?: boolean
   createdAt?: Date | string | null
   updatedAt?: Date | string | null

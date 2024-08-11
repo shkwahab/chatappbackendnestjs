@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
-import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto } from './dto/room.dto';
+import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRoomDto } from './dto/room.dto';
 import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
@@ -11,14 +11,47 @@ export class RoomsService {
     private readonly notifierService: NotificationService
   ) { }
 
-  async create(createRoomDto: CreateRoomDto) {
+  async create(createRoomDto: CreateRoomDto, memberRoomDto?: MemberRoomDto[]) {
     try {
       const room = await this.databaseService.rooms.create({
         data: createRoomDto,
       });
+      const sender=await this.databaseService.user.findUnique({where:{id:room.adminId}})
       await this.databaseService.roomMembership.create({
         data: { roomId: room.id, userId: room.adminId, isApproved: true, role: "ADMIN" }
       })
+      if (memberRoomDto.length > 0) {
+        const promises = memberRoomDto.map(async (item) => {
+          return this.databaseService.roomMembership.create({
+            data: {
+              roomId: room.id,
+              userId: item.userId,
+              isApproved: false,
+              role: "USER",
+            },
+          });
+        });
+        await Promise.all(promises);
+
+        
+        await this.databaseService.notifications.create({
+          data: {
+            senderId: room.adminId,
+            message: `${sender.name} has requested you to join the ${room.name} ${room.isPublic?"channel":"group"}`,
+            type: "Action",
+            url: "/rooms/acceptRequest",
+            NotificationReceivers: {
+              createMany: {
+                data: memberRoomDto.map((item) => ({
+                  receiverId: item.userId,
+                })),
+              },
+            },
+          },
+        });
+        
+      }
+
       return room
     } catch (error) {
       console.log(error);
@@ -39,8 +72,8 @@ export class RoomsService {
       const rooms = await this.databaseService.rooms.findMany({
         skip,
         take: limit,
-        include:{
-          roomMemberships:true
+        include: {
+          roomMemberships: true
         }
       });
 
@@ -54,7 +87,7 @@ export class RoomsService {
         }
         return null;
       };
-      
+
       // Fetch the last message for each room
       const roomsWithLastMessage = await Promise.all(
         rooms.map(async (room) => {
@@ -65,8 +98,8 @@ export class RoomsService {
             }
           });
           const lastMessage = lastMessageMemberShip && lastMessageMemberShip.messageId
-          ? await getLastMessage(lastMessageMemberShip.messageId)
-          : null;
+            ? await getLastMessage(lastMessageMemberShip.messageId)
+            : null;
           return {
             ...room,
             lastMessage,
@@ -91,7 +124,7 @@ export class RoomsService {
   async findAllUserRooms(id: string, page: number = 1) {
     const limit = 10;
     const skip = (page - 1) * limit;
-  
+
     try {
       // Get total count of rooms for the user
       const totalCount = await this.databaseService.rooms.count({
@@ -103,7 +136,7 @@ export class RoomsService {
           },
         },
       });
-  
+
       // Fetch rooms with pagination for the given user
       const rooms = await this.databaseService.rooms.findMany({
         where: {
@@ -116,7 +149,7 @@ export class RoomsService {
         skip,
         take: limit,
       });
-  
+
       const getLastMessage = async (messageId: string | null) => {
         if (messageId) {
           return await this.databaseService.message.findUnique({
@@ -127,7 +160,7 @@ export class RoomsService {
         }
         return null;
       };
-  
+
       // Fetch the last message for each room
       const roomsWithLastMessage = await Promise.all(
         rooms.map(async (room) => {
@@ -144,7 +177,7 @@ export class RoomsService {
           };
         }),
       );
-  
+
       // Construct response
       const response = {
         count: totalCount,
@@ -152,14 +185,14 @@ export class RoomsService {
         previous: page > 1 ? `/rooms/user/${id}?page=${page - 1}` : null,
         result: roomsWithLastMessage,
       };
-  
+
       return response;
     } catch (error) {
       console.log(error);
       throw new BadRequestException('Failed to fetch user rooms: ' + error.message);
     }
   }
-  
+
 
   async findOne(id: string) {
     try {
