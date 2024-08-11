@@ -86,22 +86,27 @@ export class RoomsGateway {
             this.server.to(adminSocket.id).emit('joinRoom', joinRoom);
         }
     }
-    
     @SubscribeMessage('sentInvitation')
     async createRoom(@MessageBody() sentInvitation: MemberRoomDto[], @ConnectedSocket() client: Socket) {
+        // Ensure client is valid
+        if (!client || !client.handshake) {
+            throw new UnauthorizedException('Client not connected or handshake information missing');
+        }
+    
         const user = client.handshake.auth?.user;
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
         }
+    
         const requestedMembers = sentInvitation.map((member) => {
             return this.userSocketMap.get(member.userId);
-        }).filter(member => member); 
+        }).filter(member => member);
     
         requestedMembers.forEach((member) => {
             this.server.to(member.id).emit('joinRequest', sentInvitation);
         });
     }
-
+    
 
     @SubscribeMessage('acceptInvitation')
     async acceptRoomInvitations(@MessageBody() acceptInviteDto: AcceptInviteDto, @ConnectedSocket() client: Socket) {

@@ -46,13 +46,15 @@ model Rooms {
 
 model RoomMembership {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String   @unique @db.ObjectId
+  userId     String   @db.ObjectId 
   roomId     String   @db.ObjectId
   role       UserRole @default(USER)
   isBlocked  Boolean  @default(false)
   isApproved Boolean  @default(false) // Indicates if the user has been approved to join the room
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
+
+  @@unique([roomId,userId])
 
   user User  @relation(fields: [userId], references: [id])
   room Rooms @relation(fields: [roomId], references: [id])
