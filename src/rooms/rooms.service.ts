@@ -112,7 +112,6 @@ export class RoomsService {
           };
         }),
       );
-
       // Construct response
       const response = {
         count: totalCount,

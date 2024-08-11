@@ -70,7 +70,7 @@ export class RoomsController {
     }
 
     @UseGuards(AuthGuard)
-    @Get("user")
+    @Get("user/:id")
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get All Rooms of User' }) // Description of the endpoint
     @ApiResponse({ status: 200, description: 'List of Rooms by User Id.', type: GetRoomDto }) // Success response
