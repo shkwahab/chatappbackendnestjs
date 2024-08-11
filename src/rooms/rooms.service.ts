@@ -71,47 +71,63 @@ export class RoomsService {
       throw new BadRequestException('Failed to fetch rooms: ' + error.message);
     }
   }
-
   async findAllUserRooms(id: string, page: number = 1) {
     const limit = 10;
     const skip = (page - 1) * limit;
-
+  
     try {
-      // Get total count of rooms for the user 
+      // Get total count of rooms for the user
       const totalCount = await this.databaseService.rooms.count({
-        where: { roomMemberships:{
-          some:{
-            userId:id
-          }
-        } },
+        where: {
+          roomMemberships: {
+            some: {
+              userId: id,
+            },
+          },
+        },
       });
-
+  
       // Fetch rooms with pagination for the given user
       const rooms = await this.databaseService.rooms.findMany({
         where: {
-          roomMemberships:{
-            some:{
-              userId:id
-            }
-          }
+          roomMemberships: {
+            some: {
+              userId: id,
+            },
+          },
         },
         skip,
         take: limit,
       });
-
+  
+      const getLastMessage = async (messageId: string | null) => {
+        if (messageId) {
+          return await this.databaseService.message.findUnique({
+            where: {
+              id: messageId,
+            },
+          });
+        }
+        return null;
+      };
+  
       // Fetch the last message for each room
       const roomsWithLastMessage = await Promise.all(
         rooms.map(async (room) => {
-          const lastMessage = await this.databaseService.messageMemberShip.findFirst({
+          const lastMessageMemberShip = await this.databaseService.messageMemberShip.findFirst({
             where: { roomId: room.id },
             orderBy: { createdAt: 'desc' },
           });
+          const lastMessage = lastMessageMemberShip && lastMessageMemberShip.messageId
+            ? await getLastMessage(lastMessageMemberShip.messageId)
+            : null;
           return {
             ...room,
             lastMessage,
           };
         }),
       );
+  
       // Construct response
       const response = {
         count: totalCount,
@@ -119,13 +135,14 @@ export class RoomsService {
         previous: page > 1 ? `/rooms/user/${id}?page=${page - 1}` : null,
         result: roomsWithLastMessage,
       };
-
+  
       return response;
     } catch (error) {
       console.log(error);
-      throw new BadRequestException('Failed to fetch user rooms  ' + error.message);
+      throw new BadRequestException('Failed to fetch user rooms: ' + error.message);
     }
   }
+  
 
   async findOne(id: string) {
     try {
@@ -161,11 +178,11 @@ export class RoomsService {
       if (!room) {
         throw new BadRequestException("No Room Found");
       }
-        return await this.databaseService.rooms.update({
-          where: { id },
-          data: { ...updateRoomDto, updatedAt: new Date() }
-        });
-      
+      return await this.databaseService.rooms.update({
+        where: { id },
+        data: { ...updateRoomDto, updatedAt: new Date() }
+      });
+
     } catch (error) {
       throw new BadRequestException(error);
     }

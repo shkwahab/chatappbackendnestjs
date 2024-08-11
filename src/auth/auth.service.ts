@@ -43,7 +43,7 @@ export class AuthService {
                 const { password, ...myUser } = user;
                 const token = await this.generateToken(myUser)
                 const refreshToken = await this.generateRefreshToken(myUser)
-                return { id:user.id, token, refreshToken }
+                return { id:user.id, token:token, refreshToken }
             } else {
                 throw new BadRequestException('Invalid Credentials');
             }
