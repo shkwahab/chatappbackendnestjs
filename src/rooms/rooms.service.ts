@@ -77,14 +77,24 @@ export class RoomsService {
     const skip = (page - 1) * limit;
 
     try {
-      // Get total count of rooms for the admin 
+      // Get total count of rooms for the user 
       const totalCount = await this.databaseService.rooms.count({
-        where: { adminId:id },
+        where: { roomMemberships:{
+          some:{
+            userId:id
+          }
+        } },
       });
 
-      // Fetch rooms with pagination for the given admin
+      // Fetch rooms with pagination for the given user
       const rooms = await this.databaseService.rooms.findMany({
-        where: { adminId: id },
+        where: {
+          roomMemberships:{
+            some:{
+              userId:id
+            }
+          }
+        },
         skip,
         take: limit,
       });
@@ -114,7 +124,7 @@ export class RoomsService {
       return response;
     } catch (error) {
       console.log(error);
-      throw new BadRequestException('Failed to fetch admin rooms: ' + error.message);
+      throw new BadRequestException('Failed to fetch user rooms  ' + error.message);
     }
   }
 
