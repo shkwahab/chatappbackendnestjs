@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseG
 import { Prisma, User } from '@prisma/client';
 import { RoomsService } from './rooms.service';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, GetRoomDto, JoinRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
+import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, CreateRoomWithMembersDto, GetRoomDto, JoinRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
 import { RoomsGateway } from './rooms.gateway';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -19,7 +19,7 @@ export class RoomsController {
     @Post()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Create a new room and sent invitation to members to join room' }) 
-    @ApiBody({ type: CreateRoomDto })
+    @ApiBody({ type: CreateRoomWithMembersDto })
     @ApiResponse({ status: 201, description: 'Room created successfully.' }) 
     @ApiResponse({ status: 400, description: 'Bad Request.' }) 
     async create(@Body(ValidationPipe) createRoomDto: CreateRoomDto, memberRoomDto: MemberRoomDto[], @Request() req) {

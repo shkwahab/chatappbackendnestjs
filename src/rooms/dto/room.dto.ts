@@ -4,8 +4,8 @@ import { IsNotEmpty, IsString } from "class-validator";
 
 export class MemberRoomDto {
   @ApiProperty({
-    required:false
-  })
+    required: false
+})
   userId: string
 }
 export class CreateRoomDto {
@@ -32,6 +32,14 @@ export class CreateRoomDto {
   messageMembership?: Prisma.MessageMemberShipCreateNestedManyWithoutRoomInput;
   roomMemberships?: Prisma.RoomMembershipCreateNestedManyWithoutRoomInput;
 }
+export class CreateRoomWithMembersDto {
+  @ApiProperty({ type: CreateRoomDto })
+  room: CreateRoomDto;
+
+  @ApiProperty({ type: [MemberRoomDto], required: false })
+  members?: MemberRoomDto[];
+}
+
 
 export class RoomDto {
   @ApiProperty()
