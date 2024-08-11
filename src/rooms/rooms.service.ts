@@ -139,7 +139,7 @@ export class RoomsService {
   async findAllUserRooms(id: string, page: number = 1) {
     const limit = 10;
     const skip = (page - 1) * limit;
-
+  
     try {
       // Get total count of rooms for the user
       const totalCount = await this.databaseService.rooms.count({
@@ -151,9 +151,9 @@ export class RoomsService {
           },
         },
       });
-
-      // Fetch rooms with pagination for the given user
-      const rooms = await this.databaseService.rooms.findMany({
+  
+      // Fetch all rooms for the given user
+      const allRooms = await this.databaseService.rooms.findMany({
         where: {
           roomMemberships: {
             some: {
@@ -161,10 +161,8 @@ export class RoomsService {
             },
           },
         },
-        skip,
-        take: limit,
       });
-
+  
       const getLastMessage = async (messageId: string | null) => {
         if (messageId) {
           return await this.databaseService.message.findUnique({
@@ -175,10 +173,10 @@ export class RoomsService {
         }
         return null;
       };
-
+  
       // Fetch the last message for each room
       const roomsWithLastMessage = await Promise.all(
-        rooms.map(async (room) => {
+        allRooms.map(async (room) => {
           const lastMessageMemberShip = await this.databaseService.messageMemberShip.findFirst({
             where: { roomId: room.id },
             orderBy: { createdAt: 'desc' },
@@ -192,21 +190,39 @@ export class RoomsService {
           };
         }),
       );
-
+  
+      // Sort rooms by last message date (if available) and then by room creation date
+      const sortedRooms = roomsWithLastMessage.sort((a, b) => {
+        const lastMessageDateA = a.lastMessage?.createdAt || new Date(0); // Default to epoch if no message
+        const lastMessageDateB = b.lastMessage?.createdAt || new Date(0); // Default to epoch if no message
+  
+        // Sort primarily by last message date
+        if (lastMessageDateA < lastMessageDateB) return 1;
+        if (lastMessageDateA > lastMessageDateB) return -1;
+  
+        // If last message dates are equal, sort by room creation date
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  
+      // Apply pagination to the sorted list
+      const paginatedRooms = sortedRooms.slice(skip, skip + limit);
+  
       // Construct response
       const response = {
         count: totalCount,
         next: page * limit < totalCount ? `/rooms/user/${id}?page=${page + 1}` : null,
         previous: page > 1 ? `/rooms/user/${id}?page=${page - 1}` : null,
-        result: roomsWithLastMessage,
+        result: paginatedRooms,
       };
-
+  
       return response;
     } catch (error) {
       console.log(error);
       throw new BadRequestException('Failed to fetch user rooms: ' + error.message);
     }
   }
+  
+  
 
 
   async findOne(id: string) {
