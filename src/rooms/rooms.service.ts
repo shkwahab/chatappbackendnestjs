@@ -39,17 +39,34 @@ export class RoomsService {
       const rooms = await this.databaseService.rooms.findMany({
         skip,
         take: limit,
+        include:{
+          roomMemberships:true
+        }
       });
 
+      const getLastMessage = async (messageId: string | null) => {
+        if (messageId) {
+          return await this.databaseService.message.findUnique({
+            where: {
+              id: messageId,
+            },
+          });
+        }
+        return null;
+      };
+      
       // Fetch the last message for each room
       const roomsWithLastMessage = await Promise.all(
         rooms.map(async (room) => {
-          const lastMessage = await this.databaseService.messageMemberShip.findFirst({
+          const lastMessageMemberShip = await this.databaseService.messageMemberShip.findFirst({
             where: { roomId: room.id },
             orderBy: {
               createdAt: "desc"
             }
           });
+          const lastMessage = lastMessageMemberShip && lastMessageMemberShip.messageId
+          ? await getLastMessage(lastMessageMemberShip.messageId)
+          : null;
           return {
             ...room,
             lastMessage,
