@@ -23,9 +23,7 @@ export class CreateRoomDto {
   isPublic?: boolean
   createdAt?: Date;
   updatedAt?: Date;
-  @ApiProperty({
-    required: false
-  })
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   adminId: string;
