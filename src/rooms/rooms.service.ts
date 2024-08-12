@@ -148,6 +148,7 @@ export class RoomsService {
           roomMemberships: {
             some: {
               userId: id,
+              isApproved:true
             },
           },
         },
@@ -159,6 +160,7 @@ export class RoomsService {
           roomMemberships: {
             some: {
               userId: id,
+              isApproved:true
             },
           },
         },

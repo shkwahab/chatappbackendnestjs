@@ -62,6 +62,7 @@ export class RoomsController {
     }
 
     @UseGuards(AuthGuard)
+   
     @Get()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get All Rooms' })
@@ -71,6 +72,17 @@ export class RoomsController {
     async findAll(@Query("page") page?: number) {
         const rooms = await this.roomsService.findAll(page);
         return rooms;
+    }
+  
+    @Get(":id")
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get Room by id' })
+    @ApiResponse({ status: 200, description: 'Get Room by Id.' })
+    @ApiParam({ name: "id", type: String })
+    @ApiResponse({ status: 400, description: 'Bad Request.' })
+    async findOne(@Param("id") id:string) {
+        const room = await this.roomsService.findOne(id);
+        return room;
     }
 
     @UseGuards(AuthGuard)
