@@ -40,8 +40,8 @@ export class MessagesService {
         }
     }
 
-    async findUserMessages(roomId: string, page: number = 1, limit: number = 10) {
-        const skip = (page - 1) * limit;
+    async findUserMessages(roomId: string, page: number = 1, limit: number) {
+        const skip = (page - 1) * Number(limit);
         try {
             const totalCount = await this.databaseService.message.count({
                 where: {
@@ -62,7 +62,7 @@ export class MessagesService {
                     },
                 },
                 skip,
-                take: limit,
+                take: Number(limit),
                 orderBy: {
                     createdAt: 'desc',
                 },
@@ -114,8 +114,8 @@ export class MessagesService {
     
             const response = {
                 count: totalCount,
-                next: page * limit < totalCount ? `/messages/rooms/${roomId}?page=${page + 1}&limit=${limit}` : null,
-                previous: page > 1 ? `/messages/rooms/${roomId}?page=${page - 1}&limit=${limit}` : null,
+                next: page * Number(limit) < totalCount ? `/messages/rooms/${roomId}?page=${page + 1}&limit=${Number(limit)}` : null,
+                previous: page > 1 ? `/messages/rooms/${roomId}?page=${page - 1}&limit=${Number(limit)}` : null,
                 results,
             };
     
