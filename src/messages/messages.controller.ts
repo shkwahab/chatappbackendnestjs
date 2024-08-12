@@ -40,8 +40,8 @@ export class MessagesController {
     @ApiParam({ name: "id", type: String })
     @ApiResponse({ status: 200, description: 'Message get successfully.' }) // Success response
     @ApiResponse({ status: 400, description: 'Bad Request.' }) // Error response
-    async getUserMessages(@Param("id") id: string, @Query("page") page: number = 1, @Query("limit") limit: number = 30) {
-        return await this.messageService.findUserMessages(id, page, limit);
+    async getUserMessages(@Param("id") id: string, @Query("page") page: number = 1, @Query("limit") limit: number = 10) {
+        return await this.messageService.findUserMessages(id, Number(page), Number(limit));
     }
 
     @UseGuards(AuthGuard)
