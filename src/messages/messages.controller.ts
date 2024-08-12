@@ -30,7 +30,7 @@ export class MessagesController {
     }
 
     @UseGuards(AuthGuard)
-    @Post()
+    @Post("get")
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get the messages of User by Room Id' }) // Description of the endpoint
     @ApiBody({ type: SendMessageDto })
