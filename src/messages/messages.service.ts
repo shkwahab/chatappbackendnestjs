@@ -111,14 +111,15 @@ export class MessagesService {
             throw new BadRequestException('Failed to retrieve user messages: ' + error.message);
         }
     }
+
     async sendMessage(sendMessageDto: SendMessageDto) {
         try {
             const newmessage = await this.create({ message: sendMessageDto.message })
             const sendMessage = await this.databaseService.messageMemberShip.create({
                 data: {
                     senderId: sendMessageDto.senderId,
-                    receiverId: sendMessageDto.receiverId,
                     messageId: newmessage.id,
+                    receiverId:sendMessageDto.receiverId,
                     roomId: sendMessageDto.roomId
                 }
             })
@@ -185,6 +186,7 @@ export class MessagesService {
             throw new BadRequestException("FAILED TO DELETE MESSAGE " + error)
         }
     }
+
     async readMessage(readMessageDto: ReadMessageDto) {
         try {
             const read = await this.databaseService.messageStatus.update({

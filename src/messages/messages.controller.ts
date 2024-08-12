@@ -24,8 +24,10 @@ export class MessagesController {
     async sendMessage(@Body(ValidationPipe) sendMessageDto: SendMessageDto, @Request() req: any) {
         const user: User = req.user
         const client = await this.messageGateway.findSocketById(user.id)
-        this.messageGateway.sendMessage(sendMessageDto, client);
-        this.messageGateway.unReadMessage(sendMessageDto.roomId, client)
+        if (client) {
+            this.messageGateway.sendMessage(sendMessageDto, client);
+            this.messageGateway.unReadMessage(sendMessageDto.roomId, client)
+        }
         return await this.messageService.sendMessage(sendMessageDto);
     }
 
@@ -68,7 +70,7 @@ export class MessagesController {
     @Post("unReadCount")
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Return the lenght of unRead Messages' }) // Description of the endpoint
-    @ApiBody({ type:UnReadMessageDto })
+    @ApiBody({ type: UnReadMessageDto })
     @ApiResponse({ status: 201, description: 'UnRead Messages length.' }) // Success response
     @ApiResponse({ status: 400, description: 'Bad Request.' }) // Error response
     async unReadMessage(@Body(ValidationPipe) unReadMessageDto: UnReadMessageDto) {
@@ -79,7 +81,7 @@ export class MessagesController {
     @Post("readMessages")
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Read the messages by message id' }) // Description of the endpoint
-    @ApiBody({ type:[ReadMessageDto] })
+    @ApiBody({ type: [ReadMessageDto] })
     @ApiResponse({ status: 201, description: 'Messages Read Successfully.' }) // Success response
     @ApiResponse({ status: 400, description: 'Bad Request.' }) // Error response
     async ReadMessages(@Body(ValidationPipe) readMessagesDto: ReadMessageDto[], @Request() req) {

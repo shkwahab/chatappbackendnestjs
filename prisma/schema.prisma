@@ -76,14 +76,14 @@ model MessageMemberShip {
   id         String    @id @default(auto()) @map("_id") @db.ObjectId
   messageId  String    @unique @db.ObjectId
   senderId   String    @db.ObjectId
-  receiverId String    @db.ObjectId
+  receiverId String?    @db.ObjectId
   roomId     String    @db.ObjectId
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now())
 
   room     Rooms   @relation(fields: [roomId], references: [id])
   sender   User    @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiver User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
   message  Message @relation(fields: [messageId], references: [id])
 }
 

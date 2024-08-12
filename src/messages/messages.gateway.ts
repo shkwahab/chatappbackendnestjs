@@ -15,7 +15,7 @@ export class MessagesGateway {
   constructor(
     private readonly jwtService: JwtService,
     private readonly databaseService: DatabaseService,
-  ) {}
+  ) { }
 
   async handleConnection(client: Socket) {
     const authHeader = client.handshake.headers.authorization;
@@ -60,8 +60,12 @@ export class MessagesGateway {
 
   @SubscribeMessage('sendMessage')
   async sendMessage(@MessageBody() sendMessage: SendMessageDto, @ConnectedSocket() client: Socket) {
+    if (!client.handshake || !client.handshake.auth) {
+      throw new UnauthorizedException('Client not connected or handshake information missing');
+    }
+  
     const user: User = client.handshake.auth.user;
-
+  
     // Check if the user is a member of the room
     const isMember = await this.databaseService.roomMembership.findFirst({
       where: {
@@ -72,7 +76,7 @@ export class MessagesGateway {
     if (!isMember) {
       return;
     }
-
+  
     const roomUsers = await this.databaseService.user.findMany({
       where: {
         roomMemberships: {
@@ -82,7 +86,7 @@ export class MessagesGateway {
         }
       }
     });
-
+  
     for (const roomUser of roomUsers) {
       const socket = this.userSocketMap.get(roomUser.id);
       if (socket) {
@@ -94,11 +98,13 @@ export class MessagesGateway {
       }
     }
   }
-
+  
   @SubscribeMessage('unReadMessage')
   async unReadMessage(@MessageBody() roomId: string, @ConnectedSocket() client: Socket) {
     const user: User = client.handshake.auth.user;
-
+    if (!client || !client.handshake || !client.handshake.auth) {
+      throw new UnauthorizedException('Client not connected or handshake information missing');
+    }
     const getAllRoomMembers = await this.databaseService.user.findMany({
       where: {
         roomMemberships: {
@@ -111,7 +117,7 @@ export class MessagesGateway {
 
     for (const member of getAllRoomMembers) {
       if (member.id === user.id) continue;
-      
+
       const socket = this.userSocketMap.get(member.id);
       if (socket) {
         this.server.to(socket.id).emit("unReadMessage", "You got the message");
@@ -122,6 +128,9 @@ export class MessagesGateway {
   @SubscribeMessage('readMessages')
   async readMessages(@MessageBody() readMessages: ReadMessageDto[], @ConnectedSocket() client: Socket) {
     const user: User = client.handshake.auth.user;
+    if (!client || !client.handshake || !client.handshake.auth) {
+      throw new UnauthorizedException('Client not connected or handshake information missing');
+    }
     const socketUser = this.userSocketMap.get(user.id);
 
     if (socketUser) {
