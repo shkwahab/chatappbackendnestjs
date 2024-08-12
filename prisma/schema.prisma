@@ -45,14 +45,15 @@ model Rooms {
 }
 
 model RoomMembership {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String   @db.ObjectId 
-  roomId     String   @db.ObjectId
-  role       UserRole @default(USER)
-  isBlocked  Boolean  @default(false)
-  isApproved Boolean  @default(false) // Indicates if the user has been approved to join the room
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now())
+  id         String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String           @db.ObjectId 
+  request    RequestRole      @default(NONE)
+  roomId     String           @db.ObjectId
+  role       UserRole         @default(USER)
+  isBlocked  Boolean          @default(false)
+  isApproved Boolean          @default(false) // Indicates if the user has been approved to join the room
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @default(now())
 
   @@unique([roomId,userId])
 
@@ -145,6 +146,11 @@ enum UserRole {
   ADMIN
 }
 
+enum RequestRole{
+  REQUEST
+  INVITATION
+  NONE
+}
 enum NotificationType {
   Message
   Action

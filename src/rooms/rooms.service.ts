@@ -41,7 +41,8 @@ export class RoomsService {
               roomId: room.id,
               userId: item.userId,
               isApproved: false,
-              role: "USER"
+              role: "USER",
+              request: "REQUEST"
             }
 
           });
@@ -139,7 +140,7 @@ export class RoomsService {
   async findAllUserRooms(id: string, page: number = 1) {
     const limit = 10;
     const skip = (page - 1) * limit;
-  
+
     try {
       // Get total count of rooms for the user
       const totalCount = await this.databaseService.rooms.count({
@@ -151,7 +152,7 @@ export class RoomsService {
           },
         },
       });
-  
+
       // Fetch all rooms for the given user
       const allRooms = await this.databaseService.rooms.findMany({
         where: {
@@ -162,7 +163,7 @@ export class RoomsService {
           },
         },
       });
-  
+
       const getLastMessage = async (messageId: string | null) => {
         if (messageId) {
           return await this.databaseService.message.findUnique({
@@ -173,7 +174,7 @@ export class RoomsService {
         }
         return null;
       };
-  
+
       // Fetch the last message for each room
       const roomsWithLastMessage = await Promise.all(
         allRooms.map(async (room) => {
@@ -190,39 +191,45 @@ export class RoomsService {
           };
         }),
       );
-  
+
       // Sort rooms by last message date (if available) and then by room creation date
       const sortedRooms = roomsWithLastMessage.sort((a, b) => {
         const lastMessageDateA = a.lastMessage?.createdAt || new Date(0); // Default to epoch if no message
         const lastMessageDateB = b.lastMessage?.createdAt || new Date(0); // Default to epoch if no message
-  
+
         // Sort primarily by last message date
         if (lastMessageDateA < lastMessageDateB) return 1;
         if (lastMessageDateA > lastMessageDateB) return -1;
-  
+
         // If last message dates are equal, sort by room creation date
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
-  
+
       // Apply pagination to the sorted list
       const paginatedRooms = sortedRooms.slice(skip, skip + limit);
-  
+
+      // Log for debugging
+      console.log('Total Count:', totalCount);
+      console.log('Skip:', skip);
+      console.log('Limit:', limit);
+      console.log('Paginated Rooms:', paginatedRooms);
+
       // Construct response
       const response = {
         count: totalCount,
-        next: page * limit < totalCount ? `/rooms/user/${id}?page=${page + 1}` : null,
-        previous: page > 1 ? `/rooms/user/${id}?page=${page - 1}` : null,
+        next: skip + limit < totalCount ? `/rooms/user/${id}?page=${Number(page) + 1}` : null,
+        previous: skip > 0 ? `/rooms/user/${id}?page=${page - 1}` : null,
         result: paginatedRooms,
       };
-  
+
       return response;
     } catch (error) {
       console.log(error);
       throw new BadRequestException('Failed to fetch user rooms: ' + error.message);
     }
   }
-  
-  
+
+
 
 
   async findOne(id: string) {
@@ -292,30 +299,38 @@ export class RoomsService {
   }
 
   async joinRoom(joinRoomDto: JoinRoomDto) {
+    const room = await this.databaseService.rooms.findUnique({
+      where: {
+        id: joinRoomDto.roomId
+      }
+    })
     const roomMembership = await this.databaseService.roomMembership.create({
       data: {
         userId: joinRoomDto.userId,
-        roomId: joinRoomDto.roomId
+        roomId: joinRoomDto.roomId,
+        request: room.isPublic ? "NONE" : "REQUEST",
+        isApproved: room.isPublic ? true : false
       }
     })
     const receiverId = await this.findAdminByRoom(joinRoomDto.roomId)
     const receiver = await this.databaseService.user.findUnique({ where: { id: receiverId } })
-    const notification = await this.databaseService.notifications.create({
-      data: {
-        event: "joinRoom",
-        senderId: joinRoomDto.userId,
-        message: `${receiver.name} requested to join the group`,
-        type: "Action",
-        url: "/rooms/join",
+    if (!(room.isPublic)) {
+      const notification = await this.databaseService.notifications.create({
+        data: {
+          event: "joinRoom",
+          senderId: joinRoomDto.userId,
+          message: `${receiver.name} requested to join the group`,
+          type: "Action",
+          url: "/rooms/join",
 
-      }
-    })
-
-    await this.databaseService.notificationReceivers.create({
-      data: { notificationId: notification.id, receiverId }
-    })
-    const notifierUrl = process.env.SITE_URL
-    await this.notifierService.sendPushNotification(notification.id, notifierUrl)
+        }
+      })
+      await this.databaseService.notificationReceivers.create({
+        data: { notificationId: notification.id, receiverId }
+      })
+      const notifierUrl = process.env.SITE_URL
+      await this.notifierService.sendPushNotification(notification.id, notifierUrl)
+    }
 
     return roomMembership
   }
