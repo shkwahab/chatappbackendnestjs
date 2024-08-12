@@ -1,10 +1,10 @@
-import { Controller, Post, UseGuards, Request, Body, ValidationPipe, Patch, Delete, Query } from '@nestjs/common';
+import { Controller, Post, UseGuards, Request, Body, ValidationPipe, Patch, Delete, Query, Param, Get } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { DeleteMessageDto, GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
+import { DeleteMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
 import { MessagesGateway } from './messages.gateway';
 import { User } from '@prisma/client';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 
 @ApiTags("messages")
 @Controller('messages')
@@ -32,16 +32,16 @@ export class MessagesController {
     }
 
     @UseGuards(AuthGuard)
-    @Post("get")
+    @Get("rooms/:id")
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Get the messages of User by Room Id' }) // Description of the endpoint
-    @ApiBody({ type: GetMessageDto })
+    @ApiOperation({ summary: 'Get the messages of User by Room Id' }) 
     @ApiQuery({ name: "page", required: false })
     @ApiQuery({ name: "limit", required: false })
-    @ApiResponse({ status: 201, description: 'Message Sent Successfully.' }) // Success response
+    @ApiParam({ name: "id", type: String })
+    @ApiResponse({ status: 200, description: 'Message get successfully.' }) // Success response
     @ApiResponse({ status: 400, description: 'Bad Request.' }) // Error response
-    async getUserMessages(@Body(ValidationPipe) getMessageDto: GetMessageDto, @Query("page") page: number = 1, @Query("limit") limit: number = 10) {
-        return await this.messageService.findUserMessages(getMessageDto, page, limit);
+    async getUserMessages(@Param("id") id:string, @Query("page") page: number = 1, @Query("limit") limit: number = 10) {
+        return await this.messageService.findUserMessages(id, page, limit);
     }
 
     @UseGuards(AuthGuard)

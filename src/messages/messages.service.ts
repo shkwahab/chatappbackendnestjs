@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
-import { DeleteMessageDto, GetMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
+import { DeleteMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
 import { NotificationService } from 'src/notification/notification.service';
 
 
@@ -40,25 +40,24 @@ export class MessagesService {
         }
     }
 
-    async findUserMessages(getMessageDto: GetMessageDto, page: number = 1, limit: number = 10) {
+    async findUserMessages(roomId: string, page: number = 1, limit: number = 10) {
         const skip = (page - 1) * limit;
         try {
             const totalCount = await this.databaseService.message.count({
                 where: {
                     messageMembership: {
                         some: {
-                            receiverId: getMessageDto.userId,
-                            roomId: getMessageDto.roomId,
+                            roomId,
                         },
                     },
                 },
             });
-
+    
             const messages = await this.databaseService.message.findMany({
                 where: {
                     messageMembership: {
                         some: {
-                            roomId: getMessageDto.roomId,
+                            roomId
                         },
                     },
                 },
@@ -68,49 +67,64 @@ export class MessagesService {
                     createdAt: 'desc',
                 },
             });
-            const messageMembersShip = async (messageId) => {
+    
+            const messageMembersShip = async (messageId: string) => {
                 const memberShip = await this.databaseService.messageMemberShip.findUnique({
                     where: {
                         messageId
                     }
                 });
-                const senderUser = await this.databaseService.user.findUnique({
-                    where: {
-                        id: memberShip.senderId
-                    }
-                });
-                const receiverUser = await this.databaseService.user.findUnique({
-                    where: {
-                        id: memberShip.receiverId
-                    }
-                });
-                const { password: senderPassword, ...sender } = senderUser;
-                const { password: receiverPassword, ...receiver } = receiverUser;
+    
+                if (!memberShip) {
+                    return { sender: null, receiver: null };
+                }
+    
+                const senderUser = memberShip.senderId
+                    ? await this.databaseService.user.findUnique({
+                        where: {
+                            id: memberShip.senderId
+                        }
+                    })
+                    : null;
+    
+                const receiverUser = memberShip.receiverId
+                    ? await this.databaseService.user.findUnique({
+                        where: {
+                            id: memberShip.receiverId
+                        }
+                    })
+                    : null;
+    
+                // Return user data without password if user exists
+                const { password: senderPassword, ...sender } = senderUser || {};
+                const { password: receiverPassword, ...receiver } = receiverUser || {};
+    
                 return { sender, receiver };
             };
-
+    
             const results = await Promise.all(messages.map(async (item) => {
                 const memberShip = await messageMembersShip(item.id);
-
+    
                 return {
                     ...item,
                     sender: memberShip.sender,
                     receiver: memberShip.receiver
                 };
             }));
-
+    
             const response = {
                 count: totalCount,
-                next: page * limit < totalCount ? `/messages/${getMessageDto.userId}?page=${page + 1}&limit=${limit}` : null,
-                previous: page > 1 ? `/messages/${getMessageDto.userId}?page=${page - 1}&limit=${limit}` : null,
+                next: page * limit < totalCount ? `/messages/rooms/${roomId}?page=${page + 1}&limit=${limit}` : null,
+                previous: page > 1 ? `/messages/rooms/${roomId}?page=${page - 1}&limit=${limit}` : null,
                 results,
             };
-
+    
             return response;
         } catch (error) {
             throw new BadRequestException('Failed to retrieve user messages: ' + error.message);
         }
     }
+    
 
     async sendMessage(sendMessageDto: SendMessageDto) {
         try {
