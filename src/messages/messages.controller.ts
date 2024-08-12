@@ -33,7 +33,7 @@ export class MessagesController {
     @Post("get")
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get the messages of User by Room Id' }) // Description of the endpoint
-    @ApiBody({ type: SendMessageDto })
+    @ApiBody({ type: GetMessageDto })
     @ApiQuery({ name: "page", required: false })
     @ApiQuery({ name: "limit", required: false })
     @ApiResponse({ status: 201, description: 'Message Sent Successfully.' }) // Success response
