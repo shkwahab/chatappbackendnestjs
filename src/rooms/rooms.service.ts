@@ -243,7 +243,8 @@ export class RoomsService {
         where: {
           roomMemberships: {
             some: {
-              roomId: id
+              roomId: id,
+              isApproved:true
             }
           }
         }
