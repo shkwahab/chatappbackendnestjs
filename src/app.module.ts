@@ -7,10 +7,11 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { NotificationModule } from './notification/notification.module';
 import { MessagesModule } from './messages/messages.module';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [ UsersModule, RoomsModule, DatabaseModule, AuthModule, NotificationModule, MessagesModule],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,JwtService],
 })
 export class AppModule {}

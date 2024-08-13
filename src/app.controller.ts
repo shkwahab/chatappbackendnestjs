@@ -1,8 +1,9 @@
-import { Controller, Get, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AppService } from './app.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadImageRequestDto } from "./dto"
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { AuthGuard } from './auth/auth.guard';
 // import { File } from 'multer'; 
 @Controller()
 export class AppController {
@@ -13,9 +14,9 @@ export class AppController {
     return this.appService.sayHi();
   }
 
-
-  @ApiBearerAuth()
+  @UseGuards(AuthGuard)
   @Post('/upload/image')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Upload Single image file' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UploadImageRequestDto })
