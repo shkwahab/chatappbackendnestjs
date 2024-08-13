@@ -19,7 +19,7 @@ export class AppService {
     const uploadStream = (buffer: Buffer): Promise<any> => {
       return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
-          { public_id: 'room' }, // Optional: specify a public_id or remove if not needed
+          { public_id: 'chatapp' }, // Optional: specify a public_id or remove if not needed
           (error, result) => {
             if (error) return reject(error);
             resolve(result);
