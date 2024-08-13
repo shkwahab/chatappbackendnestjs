@@ -8,6 +8,12 @@ export class MemberRoomDto {
 })
   userId: string
 }
+export class MemberRequestRoomDto {
+  @ApiProperty()
+  userId: string
+  @ApiProperty()
+  roomId: string
+}
 export class CreateRoomDto {
   @ApiProperty()
   @IsNotEmpty()

@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseG
 import { Prisma, User } from '@prisma/client';
 import { RoomsService } from './rooms.service';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, CreateRoomWithMembersDto, GetRoomDto, JoinRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
+import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, CreateRoomWithMembersDto, GetRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
 import { RoomsGateway } from './rooms.gateway';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -30,6 +30,23 @@ export class RoomsController {
         const room = await this.roomsService.create(createRoomWithMemberDto.room, createRoomWithMemberDto.members);
         return room;
     }
+    
+    @UseGuards(AuthGuard)
+    @Post("/sendRequest")
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Sent Request to members to join room' })
+    @ApiBody({ type: [MemberRequestRoomDto] })
+    @ApiResponse({ status: 201, description: 'Room created successfully.' })
+    @ApiResponse({ status: 400, description: 'Bad Request.' })
+    async sendRequest(@Body(ValidationPipe) sendMembersRequestDto:MemberRequestRoomDto[], @Request() req) {
+        const user: User = req.user
+        const client = await this.roomsGateway.findSocketById(user.id)
+        if (client)
+            await this.roomsGateway.sendRequest(sendMembersRequestDto, client)
+        const room = await this.roomsService.sendRequest(sendMembersRequestDto);
+        return room;
+    }
+
 
     @UseGuards(AuthGuard)
     @Post("join")

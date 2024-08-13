@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
-import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRoomDto } from './dto/room.dto';
+import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto } from './dto/room.dto';
 import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
@@ -71,6 +71,49 @@ export class RoomsService {
     } catch (error) {
       console.log(error);
       throw new BadRequestException(error.message);
+    }
+  }
+
+  async sendRequest(memberRoomDto: MemberRequestRoomDto[]) {
+    try {
+      const promises = memberRoomDto.map(async (item) => {
+        return this.databaseService.roomMembership.create({
+          data: {
+            roomId: memberRoomDto[0].roomId,
+            userId: item.userId,
+            isApproved: false,
+            role: "USER",
+            request: "REQUEST"
+          }
+
+        });
+      });
+      await Promise.all(promises);
+
+      const room = await this.databaseService.rooms.findUnique({
+        where: { id: memberRoomDto[0].roomId }
+      })
+        const sender = await this.databaseService.user.findUnique({
+          where: { id: room.adminId },
+        });
+
+      await this.databaseService.notifications.create({
+        data: {
+          senderId: room.adminId,
+          message: `${sender.name} has requested you to join the ${room.name} ${room.isPublic ? "channel" : "group"}`,
+          type: "Action",
+          url: "/rooms/acceptRequest",
+          NotificationReceivers: {
+            createMany: {
+              data: memberRoomDto.map((item) => ({
+                receiverId: item.userId,
+              })),
+            },
+          },
+        },
+      });
+    } catch (error) {
+      throw new BadRequestException(error)
     }
   }
 
@@ -148,7 +191,7 @@ export class RoomsService {
           roomMemberships: {
             some: {
               userId: id,
-              isApproved:true
+              isApproved: true
             },
           },
         },
@@ -160,7 +203,7 @@ export class RoomsService {
           roomMemberships: {
             some: {
               userId: id,
-              isApproved:true
+              isApproved: true
             },
           },
         },
@@ -244,7 +287,7 @@ export class RoomsService {
           roomMemberships: {
             some: {
               roomId: id,
-              isApproved:true
+              isApproved: true
             }
           }
         }
