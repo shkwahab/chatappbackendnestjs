@@ -31,14 +31,6 @@ export class MessagesService {
         }
     }
 
-    async delete(id: string) {
-        try {
-            const messageTrash = await this.databaseService.message.delete({ where: { id } })
-            return messageTrash
-        } catch (error) {
-            throw new BadRequestException("Failed to delete message " + error)
-        }
-    }
 
     async findUserMessages(roomId: string, page: number = 1, limit: number) {
         const skip = (page - 1) * Number(limit);
@@ -186,20 +178,43 @@ export class MessagesService {
         }
     }
 
+    async delete(id: string) {
+        try {
+            // Check if related MessageMemberShip records exist
+            await this.databaseService.messageMemberShip.deleteMany({
+                where: { messageId: id }
+            });
+    
+            // Delete the message
+            const messageTrash = await this.databaseService.message.delete({
+                where: { id }
+            });
+            return messageTrash;
+        } catch (error) {
+            throw new BadRequestException("Failed to delete message " + error.message);
+        }
+    }
+    
     async deleteMessage(deleteMessageDto: DeleteMessageDto) {
         try {
+            // Find the messageMemberShip record
             const messageMemberShip = await this.databaseService.messageMemberShip.findUnique({
                 where: {
                     messageId: deleteMessageDto.messageId
                 }
-            })
-            if (messageMemberShip.senderId === deleteMessageDto.userId) {
+            });
+    
+            // Check if messageMemberShip exists and matches the sender
+            if (messageMemberShip && messageMemberShip.senderId === deleteMessageDto.userId) {
                 return await this.delete(deleteMessageDto.messageId);
+            } else {
+                throw new BadRequestException("Unauthorized to delete the message or message not found.");
             }
         } catch (error) {
-            throw new BadRequestException("FAILED TO DELETE MESSAGE " + error)
+            throw new BadRequestException("FAILED TO DELETE MESSAGE " + error.message);
         }
     }
+    
 
     async readMessage(readMessageDto: ReadMessageDto) {
         try {

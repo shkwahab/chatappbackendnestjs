@@ -56,14 +56,15 @@ export class MessagesController {
     }
 
     @UseGuards(AuthGuard)
-    @Delete()
+    @Delete("/:id/:userId")
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Delete the messages of User by Room Id' }) // Description of the endpoint
-    @ApiBody({ type: DeleteMessageDto })
-    @ApiResponse({ status: 201, description: 'Message Deleted Successfully.' }) // Success response
-    @ApiResponse({ status: 400, description: 'Bad Request.' }) // Error response
-    async deleteUserMessage(@Body(ValidationPipe) deleteMessageDto: DeleteMessageDto) {
-        return await this.messageService.deleteMessage(deleteMessageDto)
+    @ApiOperation({ summary: 'Delete the messages of User by Room Id' }) 
+    @ApiParam({name:"id",type:String})
+    @ApiParam({name:"userId",type:String})
+    @ApiResponse({ status: 201, description: 'Message Deleted Successfully.' }) 
+    @ApiResponse({ status: 400, description: 'Bad Request.' }) 
+    async deleteUserMessage(@Param("id") messageId:string,@Param("userId") userId:string) {
+        return await this.messageService.deleteMessage({messageId,userId})
     }
 
     @UseGuards(AuthGuard)
