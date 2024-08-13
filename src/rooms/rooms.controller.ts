@@ -36,7 +36,7 @@ export class RoomsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Sent Request to members to join room' })
     @ApiBody({ type: [MemberRequestRoomDto] })
-    @ApiResponse({ status: 201, description: 'Room created successfully.' })
+    @ApiResponse({ status: 201, description: 'Request Sent successfully.' })
     @ApiResponse({ status: 400, description: 'Bad Request.' })
     async sendRequest(@Body(ValidationPipe) sendMembersRequestDto:MemberRequestRoomDto[], @Request() req) {
         const user: User = req.user
