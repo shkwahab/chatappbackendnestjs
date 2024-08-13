@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseG
 import { Prisma, User } from '@prisma/client';
 import { RoomsService } from './rooms.service';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, CreateRoomWithMembersDto, GetRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
+import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomWithMembersDto, GetRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
 import { RoomsGateway } from './rooms.gateway';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 

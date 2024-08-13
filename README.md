@@ -73,6 +73,9 @@ WEB_PUSH_PRIVATE_KEY    =     "3mvz9AabmvZ3xqxcVGq9Y4isavxiUMm5nmzFhVSoBm0"
 WEB_PUSH_MAIL           =     "yourname@emailprovider.com"
 APP_ICON                =     "https://myapp.com/logo.svg"
 SITE_URL                =     "https://myapp.com"   
+CLOUDINARY_CLOUD_NAME        =     "<YOUR_CLOUD_NAME>"
+CLOUDINARY_API_KEY           =     "<YOUR_API_KEY>"
+CLOUDINARY_API_SECRET        =     "<YOUR_API_SECRET>"
 ```
 
 4. Set up MongoDB replica set (default port is 27017). 
