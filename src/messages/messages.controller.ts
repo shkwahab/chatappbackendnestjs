@@ -40,8 +40,9 @@ export class MessagesController {
     @ApiParam({ name: "id", type: String })
     @ApiResponse({ status: 200, description: 'Message get successfully.' }) // Success response
     @ApiResponse({ status: 400, description: 'Bad Request.' }) // Error response
-    async getUserMessages(@Param("id") id: string, @Query("page") page: number = 1, @Query("limit") limit: number = 10) {
-        return await this.messageService.findUserMessages(id, Number(page), Number(limit));
+    async getUserMessages(@Param("id") id: string, @Request() req, @Query("page") page: number = 1, @Query("limit") limit: number = 10) {
+        const user: User = req.user
+        return await this.messageService.findUserMessages(id, Number(page), Number(limit), user);
     }
 
     @UseGuards(AuthGuard)
@@ -58,16 +59,16 @@ export class MessagesController {
     @UseGuards(AuthGuard)
     @Delete("/:id/:userId")
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Delete the messages of User by Room Id' }) 
-    @ApiParam({name:"id",type:String})
-    @ApiParam({name:"userId",type:String})
-    @ApiResponse({ status: 201, description: 'Message Deleted Successfully.' }) 
-    @ApiResponse({ status: 400, description: 'Bad Request.' }) 
-    async deleteUserMessage(@Param("id") messageId:string,@Param("userId") userId:string) {
-        return await this.messageService.deleteMessage({messageId,userId})
+    @ApiOperation({ summary: 'Delete the messages of User by Room Id' })
+    @ApiParam({ name: "id", type: String })
+    @ApiParam({ name: "userId", type: String })
+    @ApiResponse({ status: 201, description: 'Message Deleted Successfully.' })
+    @ApiResponse({ status: 400, description: 'Bad Request.' })
+    async deleteUserMessage(@Param("id") messageId: string, @Param("userId") userId: string) {
+        return await this.messageService.deleteMessage({ messageId, userId })
     }
 
-    
+
 
     @UseGuards(AuthGuard)
     @Patch("readMessages")
@@ -79,7 +80,8 @@ export class MessagesController {
     async ReadMessages(@Body(ValidationPipe) readMessagesDto: ReadMessageDto[], @Request() req) {
         const user: User = req.user
         const client = await this.messageGateway.findSocketById(user.id)
-        this.messageGateway.readMessages(readMessagesDto, client)
+        if (client)
+            this.messageGateway.readMessages(readMessagesDto, client)
         return await this.messageService.readMessages(readMessagesDto)
     }
 

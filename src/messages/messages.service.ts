@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { DeleteMessageDto, ReadMessageDto, SendMessageDto, UpdateMessageDto } from './dto/messageDto';
 import { NotificationService } from 'src/notification/notification.service';
@@ -32,7 +32,7 @@ export class MessagesService {
     }
 
 
-    async findUserMessages(roomId: string, page: number = 1, limit: number) {
+    async findUserMessages(roomId: string, page: number = 1, limit: number, user: User) {
         const skip = (page - 1) * Number(limit);
         try {
             const totalCount = await this.databaseService.message.count({
@@ -94,13 +94,21 @@ export class MessagesService {
                 return { sender, receiver };
             };
 
+            const unread = await this.databaseService.messageStatus.findMany({
+                where: {
+                    roomId,
+                    userId: user.id,
+                    isRead: false
+                },
+            });
             const results = await Promise.all(messages.map(async (item) => {
                 const memberShip = await messageMembersShip(item.id);
-
+                // Fetch the unread messages count for the current user
                 return {
                     ...item,
                     sender: memberShip.sender,
-                    receiver: memberShip.receiver
+                    receiver: memberShip.receiver,
+                    
                 };
             }));
 
@@ -109,6 +117,7 @@ export class MessagesService {
                 next: page * Number(limit) < totalCount ? `/messages/rooms/${roomId}?page=${page + 1}&limit=${Number(limit)}` : null,
                 previous: page > 1 ? `/messages/rooms/${roomId}?page=${page - 1}&limit=${Number(limit)}` : null,
                 results,
+                unRead: unread
             };
 
             return response;
@@ -133,7 +142,8 @@ export class MessagesService {
                 data: {
                     messageId: newmessage.id,
                     userId: sendMessageDto.senderId,
-                    roomId: sendMessageDto.roomId
+                    roomId: sendMessageDto.roomId,
+                    isRead: true
                 }
             })
             const sender = await this.databaseService.user.findUnique({ where: { id: sendMessageDto.senderId } })
@@ -244,21 +254,25 @@ export class MessagesService {
             throw new BadRequestException("FAILED TO READ MESSAGE" + error)
         }
     }
-    async readMessages(read: ReadMessageDto[]) {
+    async readMessages(read: ReadMessageDto[] | ReadMessageDto) {
         try {
-            const readPromises = read.map(item =>
+            // Ensure read is always an array
+            const readArray = Array.isArray(read) ? read : [read];
+    
+            const readPromises = readArray.map(item =>
                 this.readMessage({
                     userId: item.userId,
                     roomId: item.roomId,
                     messageId: item.messageId
                 })
             );
+    
             await Promise.all(readPromises);
         } catch (error) {
-            throw new BadRequestException("Failed to read messages" + error)
+            throw new BadRequestException("Failed to read messages: " + error);
         }
     }
-
+    
 
 }
 
