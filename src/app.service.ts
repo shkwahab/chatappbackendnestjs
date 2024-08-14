@@ -34,6 +34,7 @@ export class AppService {
       const imgurl = {
         img: uploadResult.secure_url as string
       }
+      
       return imgurl;
     } catch (error) {
       console.error('Error uploading image:', error);

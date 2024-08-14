@@ -67,16 +67,7 @@ export class MessagesController {
         return await this.messageService.deleteMessage({messageId,userId})
     }
 
-    @UseGuards(AuthGuard)
-    @Post("unReadCount")
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Return the lenght of unRead Messages' }) // Description of the endpoint
-    @ApiBody({ type: UnReadMessageDto })
-    @ApiResponse({ status: 201, description: 'UnRead Messages length.' }) // Success response
-    @ApiResponse({ status: 400, description: 'Bad Request.' }) // Error response
-    async unReadMessage(@Body(ValidationPipe) unReadMessageDto: UnReadMessageDto) {
-        return await this.messageService.unReadMessageCount(unReadMessageDto)
-    }
+    
 
     @UseGuards(AuthGuard)
     @Post("readMessages")

@@ -249,19 +249,6 @@ export class MessagesService {
         }
     }
 
-    async unReadMessageCount(unReadMessageDto: UnReadMessageDto) {
-        try {
-            const unRead = await this.databaseService.messageStatus.count({
-                where: {
-                    isRead: false,
-                    userId: unReadMessageDto.userId,
-                    roomId: unReadMessageDto.roomId
-                }
-            })
-            return unRead
-        } catch (error) {
-            throw new BadRequestException(error)
-        }
-    }
+ 
 }
 

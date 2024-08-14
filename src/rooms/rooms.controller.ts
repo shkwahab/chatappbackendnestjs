@@ -30,7 +30,7 @@ export class RoomsController {
         const room = await this.roomsService.create(createRoomWithMemberDto.room, createRoomWithMemberDto.members);
         return room;
     }
-    
+
     @UseGuards(AuthGuard)
     @Post("/sendRequest")
     @ApiBearerAuth()
@@ -38,7 +38,7 @@ export class RoomsController {
     @ApiBody({ type: [MemberRequestRoomDto] })
     @ApiResponse({ status: 201, description: 'Request Sent successfully.' })
     @ApiResponse({ status: 400, description: 'Bad Request.' })
-    async sendRequest(@Body(ValidationPipe) sendMembersRequestDto:MemberRequestRoomDto[], @Request() req) {
+    async sendRequest(@Body(ValidationPipe) sendMembersRequestDto: MemberRequestRoomDto[], @Request() req) {
         const user: User = req.user
         const client = await this.roomsGateway.findSocketById(user.id)
         if (client)
@@ -79,7 +79,7 @@ export class RoomsController {
     }
 
     @UseGuards(AuthGuard)
-   
+
     @Get()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get All Rooms' })
@@ -90,14 +90,14 @@ export class RoomsController {
         const rooms = await this.roomsService.findAll(page);
         return rooms;
     }
-  
+
     @Get(":id")
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get Room by id' })
     @ApiResponse({ status: 200, description: 'Get Room by Id.' })
     @ApiParam({ name: "id", type: String })
     @ApiResponse({ status: 400, description: 'Bad Request.' })
-    async findOne(@Param("id") id:string) {
+    async findOne(@Param("id") id: string) {
         const room = await this.roomsService.findOne(id);
         return room;
     }
@@ -110,8 +110,9 @@ export class RoomsController {
     @ApiQuery({ name: "page", type: Number, required: false })
     @ApiParam({ name: "id", type: String })
     @ApiResponse({ status: 400, description: 'Bad Request.' })
-    async findAllUserRooms(@Param("id") id: string, @Query("page") page?: number) {
-        const rooms = await this.roomsService.findAllUserRooms(id, page);
+    async findAllUserRooms(@Param("id") id: string, @Request() req, @Query("page") page?: number,) {
+        const user: User = req.user
+        const rooms = await this.roomsService.findAllUserRooms(id, page, user);
         return rooms;
     }
 
@@ -157,6 +158,7 @@ export class RoomsController {
     @ApiResponse({ status: 400, description: 'Only Admin has right to update the room.' })
     async update(@Param("id") id: string, @Body() updateRoomDto: Prisma.RoomsUpdateInput) {
         const updatedRoom = await this.roomsService.update(id, updateRoomDto);
+        console.log(updateRoomDto)
         return updatedRoom;
     }
 

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto } from './dto/room.dto';
 import { NotificationService } from 'src/notification/notification.service';
@@ -93,9 +93,9 @@ export class RoomsService {
       const room = await this.databaseService.rooms.findUnique({
         where: { id: memberRoomDto[0].roomId }
       })
-        const sender = await this.databaseService.user.findUnique({
-          where: { id: room.adminId },
-        });
+      const sender = await this.databaseService.user.findUnique({
+        where: { id: room.adminId },
+      });
 
       await this.databaseService.notifications.create({
         data: {
@@ -180,7 +180,7 @@ export class RoomsService {
       throw new BadRequestException('Failed to fetch rooms: ' + error.message);
     }
   }
-  async findAllUserRooms(id: string, page: number = 1) {
+  async findAllUserRooms(id: string, page: number = 1,user:User) {
     const limit = 10;
     const skip = (page - 1) * limit;
 
@@ -219,24 +219,38 @@ export class RoomsService {
         }
         return null;
       };
+      // Count Read uncount messages
 
-      // Fetch the last message for each room
+
       const roomsWithLastMessage = await Promise.all(
         allRooms.map(async (room) => {
+          // Fetch the last message membership for the room
           const lastMessageMemberShip = await this.databaseService.messageMemberShip.findFirst({
             where: { roomId: room.id },
             orderBy: { createdAt: 'desc' },
           });
+      
+          // Fetch the unread messages count for the current user
+          const unread = await this.databaseService.messageStatus.count({
+            where: {
+              roomId: room.id,  // Use room.id instead of room.adminId to fetch unread messages in the room
+              userId: user.id
+            },
+          });
+      
+          // Fetch the last message if it exists
           const lastMessage = lastMessageMemberShip && lastMessageMemberShip.messageId
             ? await getLastMessage(lastMessageMemberShip.messageId)
             : null;
+      
+          // Return the room details with lastMessage and unread count
           return {
             ...room,
             lastMessage,
+            unread, // Add unread count to the response
           };
         }),
       );
-
       // Sort rooms by last message date (if available) and then by room creation date
       const sortedRooms = roomsWithLastMessage.sort((a, b) => {
         const lastMessageDateA = a.lastMessage?.createdAt || new Date(0); // Default to epoch if no message
@@ -252,12 +266,6 @@ export class RoomsService {
 
       // Apply pagination to the sorted list
       const paginatedRooms = sortedRooms.slice(skip, skip + limit);
-
-      // Log for debugging
-      console.log('Total Count:', totalCount);
-      console.log('Skip:', skip);
-      console.log('Limit:', limit);
-      console.log('Paginated Rooms:', paginatedRooms);
 
       // Construct response
       const response = {
@@ -312,11 +320,12 @@ export class RoomsService {
       if (!room) {
         throw new BadRequestException("No Room Found");
       }
-      return await this.databaseService.rooms.update({
+      const update = await this.databaseService.rooms.update({
         where: { id },
         data: { ...updateRoomDto, updatedAt: new Date() }
       });
-
+      console.log(update)
+      return update
     } catch (error) {
       throw new BadRequestException(error);
     }
@@ -329,24 +338,24 @@ export class RoomsService {
         throw new NotFoundException("Invalid Room Id");
       }
       await this.databaseService.messageStatus.deleteMany({
-        where:{
-          roomId:room.id
+        where: {
+          roomId: room.id
         }
       })
       await this.databaseService.messageMemberShip.deleteMany({
-        where:{
-          roomId:room.id
+        where: {
+          roomId: room.id
         }
       })
       await this.databaseService.roomMembership.deleteMany({
-        where:{
-          roomId:room.id
+        where: {
+          roomId: room.id
         }
       })
       await this.databaseService.rooms.delete({ where: { id } });
-      return { message: "Deleted successfully"};
+      return { message: "Deleted successfully" };
     } catch (error) {
-      throw new BadRequestException("Failed to Delete"+error);
+      throw new BadRequestException("Failed to Delete" + error);
     }
   }
 
