@@ -119,7 +119,7 @@ export class RoomsService {
 
 
 
-  async findAll(page: number = 1) {
+  async findAll(page: number = 1,user:User) {
     const limit = 10;
     const skip = (page - 1) * limit;
 
@@ -156,16 +156,28 @@ export class RoomsService {
               createdAt: "desc"
             }
           });
+
+           // Fetch the unread messages count for the current user
+           const unread = await this.databaseService.messageStatus.count({
+            where: {
+              roomId: room.id,
+              userId: user.id,
+              isRead: false
+            },
+          });
+
           const lastMessage = lastMessageMemberShip && lastMessageMemberShip.messageId
             ? await getLastMessage(lastMessageMemberShip.messageId)
             : null;
           return {
             ...room,
             lastMessage,
+            unread
           };
         }),
       );
 
+     
       // Construct response
       const response = {
         count: totalCount,
@@ -180,6 +192,8 @@ export class RoomsService {
       throw new BadRequestException('Failed to fetch rooms: ' + error.message);
     }
   }
+
+
   async findAllUserRooms(id: string, page: number = 1, user: User) {
     const limit = 10;
     const skip = (page - 1) * limit;

@@ -86,8 +86,9 @@ export class RoomsController {
     @ApiResponse({ status: 200, description: 'List of Rooms.', type: GetRoomDto })
     @ApiQuery({ name: "page", type: Number, required: false })
     @ApiResponse({ status: 400, description: 'Bad Request.' })
-    async findAll(@Query("page") page?: number) {
-        const rooms = await this.roomsService.findAll(page);
+    async findAll(@Request() req, @Query("page") page?: number) {
+        const user:User=req.user;
+        const rooms = await this.roomsService.findAll(page,user);
         return rooms;
     }
 
