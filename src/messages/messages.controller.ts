@@ -70,7 +70,7 @@ export class MessagesController {
     
 
     @UseGuards(AuthGuard)
-    @Post("readMessages")
+    @Patch("readMessages")
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Read the messages by message id' }) // Description of the endpoint
     @ApiBody({ type: [ReadMessageDto] })
