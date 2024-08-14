@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
-import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto } from './dto/room.dto';
+import { AcceptInviteDto, AcceptRequestDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto } from './dto/room.dto';
 import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
@@ -119,7 +119,7 @@ export class RoomsService {
 
 
 
-  async findAll(page: number = 1,user:User) {
+  async findAll(page: number = 1, user: User) {
     const limit = 10;
     const skip = (page - 1) * limit;
 
@@ -157,8 +157,8 @@ export class RoomsService {
             }
           });
 
-           // Fetch the unread messages count for the current user
-           const unread = await this.databaseService.messageStatus.count({
+          // Fetch the unread messages count for the current user
+          const unread = await this.databaseService.messageStatus.count({
             where: {
               roomId: room.id,
               userId: user.id,
@@ -177,7 +177,7 @@ export class RoomsService {
         }),
       );
 
-     
+
       // Construct response
       const response = {
         count: totalCount,
@@ -473,7 +473,64 @@ export class RoomsService {
     }
   }
 
- 
+  async acceptRoomRequest(acceptRequstDto: AcceptRequestDto, currentUser: User) {
+    try {
+      if (currentUser.id === currentUser.id) {
+        const updateMembership = await this.databaseService.roomMembership.update({
+          where: {
+            roomId_userId: {
+              roomId: acceptRequstDto.roomId,
+              userId: acceptRequstDto.userId
+            }
+          },
+          data: {
+            isApproved: true
+          }
+        })
+        const room = await this.databaseService.rooms.findUnique({
+          where: {
+            id: acceptRequstDto.roomId
+          }
+        })
+        const sender = await this.databaseService.user.findUnique({
+          where: {
+            id: acceptRequstDto.userId
+          }
+        })
+        const receiver = await this.databaseService.user.findUnique({
+          where: {
+            id: room.adminId
+          }
+        })
+
+        const notification = await this.databaseService.notifications.create({
+          data: {
+            type: "Message",
+            senderId: acceptRequstDto.userId,
+            message: `${sender.name} has accepted your request to join the ${room.name} ${room.isPublic ? "community" : "group"} `,
+            event: "acceptRequest"
+          }
+        })
+
+        await this.databaseService.notificationReceivers.create({
+          data: {
+            notificationId: notification.id,
+            receiverId: receiver.id
+          }
+        })
+
+        const notifierUrl = process.env.SITE_URL
+        await this.notifierService.sendPushNotification(notification.id, notifierUrl)
+
+        return updateMembership
+      }
+      throw new BadRequestException("Dont have right to update other users request")
+
+    } catch (error) {
+      throw new BadRequestException(error)
+    }
+  }
+
   async blockRoomUser(adminId: string, blockRoomMemberDto: BlockRoomMemberDto) {
     try {
       const admin = await this.findAdminByRoom(blockRoomMemberDto.roomId)

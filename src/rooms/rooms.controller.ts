@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseG
 import { Prisma, User } from '@prisma/client';
 import { RoomsService } from './rooms.service';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomWithMembersDto, GetRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
+import { AcceptInviteDto, AcceptRequestDto, BlockRoomMemberDto, CreateRoomWithMembersDto, GetRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
 import { RoomsGateway } from './rooms.gateway';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 
@@ -76,6 +76,21 @@ export class RoomsController {
         const client = await this.roomsGateway.findSocketById(user.id)
         this.roomsGateway.acceptRoomInvitations(acceptInviteDto, client);
         return invite
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch("acceptRequest")
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Accept Request Room' })
+    @ApiBody({ type: AcceptRequestDto })
+    @ApiResponse({ status: 201, description: 'Request Accepted.' })
+    @ApiResponse({ status: 400, description: 'Bad Request.' })
+    async acceptRequest(@Body() acceptRequestDto: AcceptRequestDto, @Request() req) {
+        const user: User = req.user
+        const request = await this.roomsService.acceptRoomRequest(acceptRequestDto,user);
+        const client = await this.roomsGateway.findSocketById(user.id)
+        this.roomsGateway.acceptRequest(acceptRequestDto, client);
+        return request
     }
 
     @UseGuards(AuthGuard)

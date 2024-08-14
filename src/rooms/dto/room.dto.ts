@@ -168,3 +168,15 @@ export class RoomsUpdateDto {
   messageStatuses?: Prisma.MessageStatusUpdateManyWithoutRoomNestedInput
   roomMemberships?: Prisma.RoomMembershipUpdateManyWithoutRoomNestedInput
 }
+
+
+export class AcceptRequestDto{
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  userId:string
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()  
+  roomId:string
+}

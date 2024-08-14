@@ -2,7 +2,7 @@ import { SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websocke
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
-import { AcceptInviteDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomDto } from './dto/room.dto';
+import { AcceptInviteDto, AcceptRequestDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomDto } from './dto/room.dto';
 import { UnauthorizedException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { isUndefined } from 'util';
@@ -92,42 +92,42 @@ export class RoomsGateway {
         if (!client || !client.handshake) {
             throw new UnauthorizedException('Client not connected or handshake information missing');
         }
-    
+
         const user = client.handshake.auth?.user;
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
         }
-    
+
         const requestedMembers = sentInvitation.map((member) => {
             return this.userSocketMap.get(member.userId);
         }).filter(member => member);
-    
+
         requestedMembers.forEach((member) => {
             this.server.to(member.id).emit('joinRequest', sentInvitation);
         });
     }
-    
+
     @SubscribeMessage('sentInvitationRequest')
     async sendRequest(@MessageBody() sentInvitation: MemberRequestRoomDto[], @ConnectedSocket() client: Socket) {
         // Ensure client is valid
         if (!client || !client.handshake) {
             throw new UnauthorizedException('Client not connected or handshake information missing');
         }
-    
+
         const user = client.handshake.auth?.user;
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
         }
-    
+
         const requestedMembers = sentInvitation.map((member) => {
             return this.userSocketMap.get(member.userId);
         }).filter(member => member);
-    
+
         requestedMembers.forEach((member) => {
             this.server.to(member.id).emit('joinRequest', sentInvitation);
         });
     }
-    
+
 
     @SubscribeMessage('acceptInvitation')
     async acceptRoomInvitations(@MessageBody() acceptInviteDto: AcceptInviteDto, @ConnectedSocket() client: Socket) {
@@ -144,6 +144,27 @@ export class RoomsGateway {
         const inviteUserSocket = this.userSocketMap.get(inviteuser.id)
         if (inviteuser && inviteuser.id === user.id) {
             this.server.to(inviteUserSocket.id).emit('acceptInvitation', acceptInviteDto);
+        }
+    }
+
+
+    @SubscribeMessage('acceptRequest')
+    async acceptRequest(@MessageBody() acceptRequestDto: AcceptRequestDto, @ConnectedSocket() client: Socket) {
+        const user = client.handshake.auth?.user; // Use optional chaining
+
+        if (!user) {
+            throw new UnauthorizedException('User not authenticated');
+        }
+
+        client.join(acceptRequestDto.roomId);
+        console.log(`Client joined room ${acceptRequestDto.roomId}`);
+
+        const room = await this.dbService.rooms.findUnique({ where: { id: acceptRequestDto.roomId } })
+
+        const roomAdminuser = await this.dbService.user.findUnique({ where: { id: room.adminId } });
+        const socketUser = this.userSocketMap.get(roomAdminuser.id)
+        if (socketUser) {
+            this.server.to(socketUser.id).emit('acceptRequest',acceptRequestDto );
         }
     }
 
