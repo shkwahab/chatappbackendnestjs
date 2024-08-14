@@ -44,6 +44,7 @@ export class UsersController {
   
   @UseGuards(AuthGuard)
   @Patch(':id')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user' }) // Description of the endpoint
   @ApiBody({ type: UpdateUserDto })
   @ApiParam({ name: 'id', type: String })
