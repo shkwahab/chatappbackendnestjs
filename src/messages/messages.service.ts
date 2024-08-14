@@ -44,7 +44,7 @@ export class MessagesService {
                     },
                 },
             });
-    
+
             const messages = await this.databaseService.message.findMany({
                 where: {
                     messageMembership: {
@@ -59,18 +59,18 @@ export class MessagesService {
                     createdAt: 'desc',
                 },
             });
-    
+
             const messageMembersShip = async (messageId: string) => {
                 const memberShip = await this.databaseService.messageMemberShip.findUnique({
                     where: {
                         messageId
                     }
                 });
-    
+
                 if (!memberShip) {
                     return { sender: null, receiver: null };
                 }
-    
+
                 const senderUser = memberShip.senderId
                     ? await this.databaseService.user.findUnique({
                         where: {
@@ -78,7 +78,7 @@ export class MessagesService {
                         }
                     })
                     : null;
-    
+
                 const receiverUser = memberShip.receiverId
                     ? await this.databaseService.user.findUnique({
                         where: {
@@ -86,37 +86,37 @@ export class MessagesService {
                         }
                     })
                     : null;
-    
+
                 // Return user data without password if user exists
                 const { password: senderPassword, ...sender } = senderUser || {};
                 const { password: receiverPassword, ...receiver } = receiverUser || {};
-    
+
                 return { sender, receiver };
             };
-    
+
             const results = await Promise.all(messages.map(async (item) => {
                 const memberShip = await messageMembersShip(item.id);
-    
+
                 return {
                     ...item,
                     sender: memberShip.sender,
                     receiver: memberShip.receiver
                 };
             }));
-    
+
             const response = {
                 count: totalCount,
                 next: page * Number(limit) < totalCount ? `/messages/rooms/${roomId}?page=${page + 1}&limit=${Number(limit)}` : null,
                 previous: page > 1 ? `/messages/rooms/${roomId}?page=${page - 1}&limit=${Number(limit)}` : null,
                 results,
             };
-    
+
             return response;
         } catch (error) {
             throw new BadRequestException('Failed to retrieve user messages: ' + error.message);
         }
     }
-    
+
 
     async sendMessage(sendMessageDto: SendMessageDto) {
         try {
@@ -125,7 +125,7 @@ export class MessagesService {
                 data: {
                     senderId: sendMessageDto.senderId,
                     messageId: newmessage.id,
-                    receiverId:sendMessageDto.receiverId,
+                    receiverId: sendMessageDto.receiverId,
                     roomId: sendMessageDto.roomId
                 }
             })
@@ -184,7 +184,7 @@ export class MessagesService {
             await this.databaseService.messageMemberShip.deleteMany({
                 where: { messageId: id }
             });
-    
+
             // Delete the message
             const messageTrash = await this.databaseService.message.delete({
                 where: { id }
@@ -194,7 +194,7 @@ export class MessagesService {
             throw new BadRequestException("Failed to delete message " + error.message);
         }
     }
-    
+
     async deleteMessage(deleteMessageDto: DeleteMessageDto) {
         try {
             // Find the messageMemberShip record
@@ -203,9 +203,19 @@ export class MessagesService {
                     messageId: deleteMessageDto.messageId
                 }
             });
-    
+
             // Check if messageMemberShip exists and matches the sender
             if (messageMemberShip && messageMemberShip.senderId === deleteMessageDto.userId) {
+                await this.databaseService.messageStatus.deleteMany({
+                    where: {
+                        messageId: deleteMessageDto.messageId
+                    }
+                })
+                await this.databaseService.messageMemberShip.deleteMany({
+                    where: {
+                        messageId: deleteMessageDto.messageId
+                    }
+                })
                 return await this.delete(deleteMessageDto.messageId);
             } else {
                 throw new BadRequestException("Unauthorized to delete the message or message not found.");
@@ -214,7 +224,7 @@ export class MessagesService {
             throw new BadRequestException("FAILED TO DELETE MESSAGE " + error.message);
         }
     }
-    
+
 
     async readMessage(readMessageDto: ReadMessageDto) {
         try {
@@ -249,6 +259,6 @@ export class MessagesService {
         }
     }
 
- 
+
 }
 
