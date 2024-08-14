@@ -118,19 +118,6 @@ export class RoomsController {
     }
 
     @UseGuards(AuthGuard)
-    @Get("invitations/:id")
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Get All Rooms Invitations by Room Id' })
-    @ApiResponse({ status: 200, description: 'List of Invitations by Room Id.', type: [RoomsInviationDto] })
-    @ApiParam({ name: "id", type: String })
-    @ApiResponse({ status: 401, description: 'UnAuthorized.' })
-    async roomsInviation(@Param("id") id: string) {
-        const rooms = await this.roomsService.findAllRoomsInvitation(id);
-        return rooms;
-    }
-
-
-    @UseGuards(AuthGuard)
     @Patch("blockMember/:id")
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Block User by Room Admin Id' })

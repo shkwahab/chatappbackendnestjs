@@ -473,16 +473,7 @@ export class RoomsService {
     }
   }
 
-  async findAllRoomsInvitation(roomId: string) {
-    try {
-      const invitationRequests = await this.databaseService.roomMembership.findMany({
-        where: { roomId: roomId }
-      })
-      return invitationRequests
-    } catch (error) {
-      throw new BadRequestException("failed to find any request")
-    }
-  }
+ 
   async blockRoomUser(adminId: string, blockRoomMemberDto: BlockRoomMemberDto) {
     try {
       const admin = await this.findAdminByRoom(blockRoomMemberDto.roomId)
