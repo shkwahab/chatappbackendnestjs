@@ -233,7 +233,7 @@ export class RoomsService {
           // Fetch the unread messages count for the current user
           const unread = await this.databaseService.messageStatus.count({
             where: {
-              roomId: room.id,  // Use room.id instead of room.adminId to fetch unread messages in the room
+              roomId: room.id,  
               userId: user.id
             },
           });

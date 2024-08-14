@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
-import { DeleteMessageDto, ReadMessageDto, SendMessageDto, UnReadMessageDto, UpdateMessageDto } from './dto/messageDto';
+import { DeleteMessageDto, ReadMessageDto, SendMessageDto, UpdateMessageDto } from './dto/messageDto';
 import { NotificationService } from 'src/notification/notification.service';
 
 
@@ -131,7 +131,7 @@ export class MessagesService {
             })
             await this.databaseService.messageStatus.create({
                 data: {
-                    messageId: sendMessage.id,
+                    messageId: newmessage.id,
                     userId: sendMessageDto.senderId,
                     roomId: sendMessageDto.roomId
                 }
