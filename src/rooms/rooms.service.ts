@@ -328,6 +328,11 @@ export class RoomsService {
       if (!room) {
         throw new NotFoundException("Invalid Room Id");
       }
+      await this.databaseService.messageStatus.deleteMany({
+        where:{
+          roomId:room.id
+        }
+      })
       await this.databaseService.messageMemberShip.deleteMany({
         where:{
           roomId:room.id
@@ -341,7 +346,7 @@ export class RoomsService {
       await this.databaseService.rooms.delete({ where: { id } });
       return { message: "Deleted successfully"};
     } catch (error) {
-      throw new BadRequestException("Failed to Delete");
+      throw new BadRequestException("Failed to Delete"+error);
     }
   }
 
