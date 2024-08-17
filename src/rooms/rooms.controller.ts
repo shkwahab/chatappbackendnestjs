@@ -41,8 +41,9 @@ export class RoomsController {
     async sendRequest(@Body(ValidationPipe) sendMembersRequestDto: MemberRequestRoomDto[], @Request() req) {
         const user: User = req.user
         const client = await this.roomsGateway.findSocketById(user.id)
-        if (client)
+        if (client) {
             await this.roomsGateway.sendRequest(sendMembersRequestDto, client)
+        }
         const room = await this.roomsService.sendRequest(sendMembersRequestDto);
         return room;
     }
@@ -59,7 +60,9 @@ export class RoomsController {
         const user: User = req.user
         const client = await this.roomsGateway.findSocketById(user.id)
         const room = await this.roomsService.joinRoom(joinRoomDto)
-        await this.roomsGateway.joinRoom(joinRoomDto, client)
+        if (client) {
+            await this.roomsGateway.joinRoom(joinRoomDto, client)
+        }
         return room;
     }
 
@@ -74,7 +77,26 @@ export class RoomsController {
         const invite = await this.roomsService.acceptInvitation(acceptInviteDto);
         const user: User = req.user
         const client = await this.roomsGateway.findSocketById(user.id)
-        this.roomsGateway.acceptRoomInvitations(acceptInviteDto, client);
+        if (client) {
+            this.roomsGateway.acceptRoomInvitations(acceptInviteDto, client);
+        }
+        return invite
+    }
+
+    @UseGuards(AuthGuard)
+    @Delete("rejectInvitation/:adminId/:roomId/:userId")
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Reject Invitation Room' })
+    @ApiResponse({ status: 201, description: 'Admin has rejected your request to join room.' })
+    @ApiResponse({ status: 400, description: 'Bad Request.' })
+    async rejectInvitation(@Param("adminId") adminId: string, @Param("roomId") roomId: string, @Param("userId") userId: string, @Request() req) {
+        const user: User = req.user
+        const invite = await this.roomsService.rejectInvitation({ adminId, roomId, userId }, user)
+        const client = await this.roomsGateway.findSocketById(user.id)
+        if (client) {
+            this.roomsGateway.rejectInvitation({ roomId, userId }, client);
+        }
+        console.log(invite)
         return invite
     }
 
@@ -87,9 +109,11 @@ export class RoomsController {
     @ApiResponse({ status: 400, description: 'Bad Request.' })
     async acceptRequest(@Body() acceptRequestDto: AcceptRequestDto, @Request() req) {
         const user: User = req.user
-        const request = await this.roomsService.acceptRoomRequest(acceptRequestDto,user);
+        const request = await this.roomsService.acceptRoomRequest(acceptRequestDto, user);
         const client = await this.roomsGateway.findSocketById(user.id)
-        this.roomsGateway.acceptRequest(acceptRequestDto, client);
+        if (client) {
+            this.roomsGateway.acceptRequest(acceptRequestDto, client);
+        }
         return request
     }
 
@@ -102,8 +126,8 @@ export class RoomsController {
     @ApiQuery({ name: "page", type: Number, required: false })
     @ApiResponse({ status: 400, description: 'Bad Request.' })
     async findAll(@Request() req, @Query("page") page?: number) {
-        const user:User=req.user;
-        const rooms = await this.roomsService.findAll(page,user);
+        const user: User = req.user;
+        const rooms = await this.roomsService.findAll(page, user);
         return rooms;
     }
 

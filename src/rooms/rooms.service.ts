@@ -163,7 +163,7 @@ export class RoomsService {
               roomId: room.id,
               userId: user.id,
               isRead: false
-            },
+            }
           });
 
           const lastMessage = lastMessageMemberShip && lastMessageMemberShip.messageId
@@ -253,6 +253,14 @@ export class RoomsService {
             },
           });
 
+          const actions = await this.databaseService.roomMembership.count({
+            where: {
+              roomId: room.id,
+              request: "INVITATION",
+              isApproved: false,
+              role: "USER"
+            }
+          })
           // Fetch the last message if it exists
           const lastMessage = lastMessageMemberShip && lastMessageMemberShip.messageId
             ? await getLastMessage(lastMessageMemberShip.messageId)
@@ -263,6 +271,7 @@ export class RoomsService {
             ...room,
             lastMessage,
             unread, // Add unread count to the response
+            actions
           };
         }),
       );
@@ -315,12 +324,28 @@ export class RoomsService {
           }
         }
       })
+      const actions = await this.databaseService.roomMembership.findMany({
+        where: {
+          roomId: room.id,
+          request: "INVITATION",
+          isApproved: false,
+          role: "USER"
+        },
+        include: {
+          user: {
+            select: {
+              username: true,
+              img: true
+            }
+          }
+        }
+      })
 
       const users = roomusers.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
       if (!room) {
         throw new BadRequestException("No Room Found");
       }
-      return { room, users };
+      return { room, users, actions };
     } catch (error) {
       console.log(error)
       throw new BadRequestException(error)
@@ -343,6 +368,20 @@ export class RoomsService {
       return update
     } catch (error) {
       throw new BadRequestException(error);
+    }
+  }
+
+
+  async rejectInvitation(rejectInvitationDto: AcceptInviteDto, user: User) {
+    if (rejectInvitationDto.adminId === user.id) {
+      await this.databaseService.roomMembership.delete({
+        where: {
+          roomId_userId: {
+            roomId: rejectInvitationDto.roomId,
+            userId: rejectInvitationDto.userId
+          }
+        }
+      })
     }
   }
 
@@ -384,41 +423,68 @@ export class RoomsService {
   }
 
   async joinRoom(joinRoomDto: JoinRoomDto) {
+    console.log(joinRoomDto);
+
+    // Find the room by ID
     const room = await this.databaseService.rooms.findUnique({
+      where: { id: joinRoomDto.roomId }
+    });
+
+    if (!room) {
+      throw new Error('Room not found');
+    }
+
+    // Check if the user is already a member of the room
+    const existingMembership = await this.databaseService.roomMembership.findUnique({
       where: {
-        id: joinRoomDto.roomId
+        roomId_userId: {
+          roomId: joinRoomDto.roomId,
+          userId: joinRoomDto.userId
+        }
       }
-    })
+    });
+    // console.log(existingMembership)
+    if (existingMembership) {
+      throw new BadRequestException('User is already a member of the room');
+    }
+
+    // Create a new room membership
     const roomMembership = await this.databaseService.roomMembership.create({
       data: {
         userId: joinRoomDto.userId,
         roomId: joinRoomDto.roomId,
-        request: room.isPublic ? "NONE" : "REQUEST",
+        role: "USER",
+        request: room.isPublic ? "NONE" : "INVITATION",
         isApproved: room.isPublic ? true : false
       }
-    })
-    const receiverId = await this.findAdminByRoom(joinRoomDto.roomId)
-    const receiver = await this.databaseService.user.findUnique({ where: { id: receiverId } })
-    if (!(room.isPublic)) {
+    });
+
+    // Notify admin if the room is not public
+    if (!room.isPublic) {
+      const receiverId = await this.findAdminByRoom(joinRoomDto.roomId);
+      const receiver = await this.databaseService.user.findUnique({ where: { id: receiverId } });
+
       const notification = await this.databaseService.notifications.create({
         data: {
           event: "joinRoom",
           senderId: joinRoomDto.userId,
           message: `${receiver.name} requested to join the group`,
           type: "Action",
-          url: "/rooms/join",
-
+          url: "/rooms/join"
         }
-      })
+      });
+
       await this.databaseService.notificationReceivers.create({
         data: { notificationId: notification.id, receiverId }
-      })
-      const notifierUrl = process.env.SITE_URL
-      await this.notifierService.sendPushNotification(notification.id, notifierUrl)
+      });
+
+      const notifierUrl = process.env.SITE_URL;
+      await this.notifierService.sendPushNotification(notification.id, notifierUrl);
     }
 
-    return roomMembership
+    return roomMembership;
   }
+
 
   async acceptInvitation(acceptInviteDto: AcceptInviteDto) {
     try {

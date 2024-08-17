@@ -5,7 +5,7 @@ import { IsNotEmpty, IsString } from "class-validator";
 export class MemberRoomDto {
   @ApiProperty({
     required: false
-})
+  })
   userId: string
 }
 export class MemberRequestRoomDto {
@@ -118,7 +118,6 @@ export class JoinRoomDto {
   @ApiProperty({
     required: false
   })
-  role?: "USER" | "ADMIN";
   isBlocked?: boolean;
   @ApiProperty({
     required: false
@@ -170,13 +169,13 @@ export class RoomsUpdateDto {
 }
 
 
-export class AcceptRequestDto{
+export class AcceptRequestDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  userId:string
+  userId: string
   @ApiProperty()
   @IsString()
-  @IsNotEmpty()  
-  roomId:string
+  @IsNotEmpty()
+  roomId: string
 }

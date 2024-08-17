@@ -168,6 +168,18 @@ export class RoomsGateway {
         }
     }
 
+    @SubscribeMessage('rejectInvitation')
+    async rejectInvitation(@MessageBody() rejectInvitationDto: AcceptRequestDto, @ConnectedSocket() client: Socket) {
+        const user = client.handshake.auth?.user; // Use optional chaining
+        if (!user) {
+            throw new UnauthorizedException('User not authenticated');
+        }
+        const socketUser = this.userSocketMap.get(rejectInvitationDto.userId)
+        if (socketUser) {
+            this.server.to(socketUser.id).emit('rejectInvitation',rejectInvitationDto );
+        }
+    }
+
     @SubscribeMessage('blockMember')
     async blockMember(@MessageBody() blockMemberDto: BlockRoomMemberDto, @ConnectedSocket() client: Socket) {
         const user = client.handshake.auth?.user;

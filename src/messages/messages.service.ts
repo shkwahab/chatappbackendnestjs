@@ -101,14 +101,19 @@ export class MessagesService {
                     isRead: false
                 },
             });
+            const actionPending = await this.databaseService.roomMembership.count({
+                where: {
+                    request: "INVITATION",
+                    roomId:roomId
+                }
+            })
             const results = await Promise.all(messages.map(async (item) => {
                 const memberShip = await messageMembersShip(item.id);
-                // Fetch the unread messages count for the current user
                 return {
                     ...item,
                     sender: memberShip.sender,
                     receiver: memberShip.receiver,
-                    
+
                 };
             }));
 
@@ -117,7 +122,8 @@ export class MessagesService {
                 next: page * Number(limit) < totalCount ? `/messages/rooms/${roomId}?page=${page + 1}&limit=${Number(limit)}` : null,
                 previous: page > 1 ? `/messages/rooms/${roomId}?page=${page - 1}&limit=${Number(limit)}` : null,
                 results,
-                unRead: unread
+                unRead: unread,
+                actionPending
             };
 
             return response;
@@ -130,6 +136,7 @@ export class MessagesService {
     async sendMessage(sendMessageDto: SendMessageDto) {
         try {
             const newmessage = await this.create({ message: sendMessageDto.message })
+
             const sendMessage = await this.databaseService.messageMemberShip.create({
                 data: {
                     senderId: sendMessageDto.senderId,
@@ -138,6 +145,30 @@ export class MessagesService {
                     roomId: sendMessageDto.roomId
                 }
             })
+            const getAllMembers = await this.databaseService.user.findMany({
+                where: {
+                    roomMemberships: {
+                        some: {
+                            roomId: sendMessageDto.roomId
+                        }
+                    }
+                }
+            })
+            const messageStatusPromises = getAllMembers
+                .filter((user) => user.id !== sendMessageDto.senderId)
+                .map(async (member: User) => {
+                    return this.databaseService.messageStatus.create({
+                        data: {
+                            messageId: newmessage.id,
+                            userId: member.id,
+                            roomId: sendMessageDto.roomId,
+                            isRead: false,
+                        },
+                    });
+                });
+
+            await Promise.all(messageStatusPromises);
+
             await this.databaseService.messageStatus.create({
                 data: {
                     messageId: newmessage.id,
@@ -146,6 +177,7 @@ export class MessagesService {
                     isRead: true
                 }
             })
+
             const sender = await this.databaseService.user.findUnique({ where: { id: sendMessageDto.senderId } })
             if (sendMessageDto.receiverId) {
                 const notification = await this.databaseService.notifications.create({
@@ -246,7 +278,10 @@ export class MessagesService {
                     isRead: true
                 },
                 where: {
-                    messageId: readMessageDto.messageId
+                    userId_messageId: {
+                        messageId: readMessageDto.messageId,
+                        userId: readMessageDto.userId
+                    }
                 }
             })
             return read
@@ -258,7 +293,7 @@ export class MessagesService {
         try {
             // Ensure read is always an array
             const readArray = Array.isArray(read) ? read : [read];
-    
+
             const readPromises = readArray.map(item =>
                 this.readMessage({
                     userId: item.userId,
@@ -266,13 +301,13 @@ export class MessagesService {
                     messageId: item.messageId
                 })
             );
-    
+
             await Promise.all(readPromises);
         } catch (error) {
             throw new BadRequestException("Failed to read messages: " + error);
         }
     }
-    
+
 
 }
 

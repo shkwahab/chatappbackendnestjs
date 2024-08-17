@@ -89,7 +89,7 @@ model MessageMemberShip {
 
 model MessageStatus {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  messageId String   @unique @db.ObjectId
+  messageId String   @db.ObjectId
   userId    String   @db.ObjectId
   roomId    String   @db.ObjectId
   isRead    Boolean  @default(false)
@@ -98,8 +98,7 @@ model MessageStatus {
   message Message @relation(fields: [messageId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
   room    Rooms   @relation(fields: [roomId], references: [id])
-
-  @@unique([messageId, userId]) // Ensure a user can only have one status per message
+  @@unique([userId,messageId])
 }
 
 model Notifications {

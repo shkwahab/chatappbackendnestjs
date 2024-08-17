@@ -65,7 +65,7 @@ export class MessagesGateway {
     }
   
     const user: User = client.handshake.auth.user;
-  
+    
     // Check if the user is a member of the room
     const isMember = await this.databaseService.roomMembership.findFirst({
       where: {
