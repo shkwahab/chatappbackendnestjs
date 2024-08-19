@@ -13,7 +13,6 @@ export class SendMessageDto {
     @ApiProperty()
     senderId: string
     @IsString()
-    @IsNotEmpty()
     @ApiProperty()
     message: string
     receiverId?: string
