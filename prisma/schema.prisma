@@ -36,6 +36,7 @@ model Rooms {
   isPublic  Boolean   @default(false) // Indicates if the room is public
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
+  deletedAt DateTime? 
 
   // Relationships managed through join table
   adminUser         User                @relation("Admin", fields: [adminId], references: [id])
@@ -54,6 +55,7 @@ model RoomMembership {
   isApproved Boolean          @default(false) // Indicates if the user has been approved to join the room
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @default(now())
+  deletedAt  DateTime?
 
   @@unique([roomId,userId])
 

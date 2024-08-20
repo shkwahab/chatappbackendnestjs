@@ -180,18 +180,18 @@ export class RoomsGateway {
         }
     }
 
-    @SubscribeMessage('blockMember')
-    async blockMember(@MessageBody() blockMemberDto: BlockRoomMemberDto, @ConnectedSocket() client: Socket) {
+    @SubscribeMessage('blockUnblockMember')
+    async blockUnblockMember(@MessageBody() blockUnblockMemberDto: BlockRoomMemberDto, @ConnectedSocket() client: Socket) {
         const user = client.handshake.auth?.user;
 
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
         }
 
-        const adminId = await this.roomsService.findAdminByRoom(blockMemberDto.roomId);
+        const adminId = await this.roomsService.findAdminByRoom(blockUnblockMemberDto.roomId);
 
         const adminSocket = this.userSocketMap.get(adminId)
-        this.server.to(adminSocket.id).emit('blockMember', blockMemberDto);
+        this.server.to(adminSocket.id).emit('blockUnblockMember', blockUnblockMemberDto);
     }
 }
 

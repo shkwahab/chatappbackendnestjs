@@ -2,9 +2,10 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Request, UseG
 import { Prisma, User } from '@prisma/client';
 import { RoomsService } from './rooms.service';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { AcceptInviteDto, AcceptRequestDto, BlockRoomMemberDto, CreateRoomWithMembersDto, GetRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
+import { AcceptInviteDto, AcceptRequestDto, BlockRoomMemberDto, CreateRoomWithMembersDto, DeleteRoomMemberShipDto, GetRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomsInviationDto, RoomsUpdateDto } from './dto/room.dto';
 import { RoomsGateway } from './rooms.gateway';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { DatabaseService } from 'src/database/database.service';
 
 
 @ApiTags("rooms")
@@ -13,6 +14,7 @@ export class RoomsController {
     constructor(
         private readonly roomsService: RoomsService,
         private readonly roomsGateway: RoomsGateway,
+        private readonly databaseService: DatabaseService,
     ) { }
 
     @UseGuards(AuthGuard)
@@ -74,13 +76,18 @@ export class RoomsController {
     @ApiResponse({ status: 201, description: 'Admin has accepted your request to join room.' })
     @ApiResponse({ status: 400, description: 'Bad Request.' })
     async acceptInvitation(@Body() acceptInviteDto: AcceptInviteDto, @Request() req) {
-        const invite = await this.roomsService.acceptInvitation(acceptInviteDto);
+        await this.roomsService.acceptInvitation(acceptInviteDto);
         const user: User = req.user
         const client = await this.roomsGateway.findSocketById(user.id)
         if (client) {
             this.roomsGateway.acceptRoomInvitations(acceptInviteDto, client);
         }
-        return invite
+        const { password, ...newUser } = await this.databaseService.user.findUnique({
+            where: {
+                id: acceptInviteDto.userId
+            }
+        });
+        return newUser
     }
 
     @UseGuards(AuthGuard)
@@ -114,7 +121,27 @@ export class RoomsController {
         if (client) {
             this.roomsGateway.acceptRequest(acceptRequestDto, client);
         }
-        return request
+
+        return request;
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch("leaveRoom")
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Exit Room or Leave Room' })
+    @ApiBody({ type: AcceptRequestDto })
+    @ApiResponse({ status: 201, description: 'Room Membership deleted.' })
+    @ApiResponse({ status: 400, description: 'Bad Request.' })
+    async exitRoom(@Body() deleteRoomMemberShipDto:DeleteRoomMemberShipDto, @Request() req) {
+        const user: User = req.user
+        const exitRoom = await this.roomsService.deleteRoomMemberShip(deleteRoomMemberShipDto)
+        // PENDING SOCKET TO AWARE USER HAS LEFT THE GROUP
+        // const client = await this.roomsGateway.findSocketById(user.id)
+        // if (client) {
+        //     this.roomsGateway.acceptRequest(acceptRequestDto, client);
+        // }
+
+        return exitRoom;
     }
 
     @UseGuards(AuthGuard)
@@ -157,20 +184,22 @@ export class RoomsController {
     }
 
     @UseGuards(AuthGuard)
-    @Patch("blockMember/:id")
+    @Patch("blockUnblockMember/:id")
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Block User by Room Admin Id' })
-    @ApiResponse({ status: 201, description: 'Block User by Room Admin Id.' })
+    @ApiOperation({ summary: 'Block Unblock User by Room Admin Id' })
+    @ApiResponse({ status: 201, description: 'Block Unblock User by Room Admin Id.' })
     @ApiBody({ type: BlockRoomMemberDto })
     @ApiParam({ name: "id", type: String })
     @ApiResponse({ status: 401, description: 'UnAuthorized.' })
     @ApiResponse({ status: 400, description: 'Only Admin has right to block the user only.' })
-    async blockMember(@Param("id") adminId: string, @Body() blockRoomMemberDto: BlockRoomMemberDto, @Request() req) {
-        const blockMember = await this.roomsService.blockRoomUser(adminId, blockRoomMemberDto);
+    async blockUnblockMember(@Param("id") adminId: string, @Body() blockRoomMemberDto: BlockRoomMemberDto, @Request() req) {
+        const blockUnblockMember = await this.roomsService.blockUnblockMember(adminId, blockRoomMemberDto);
         const user: User = req.user
         const client = await this.roomsGateway.findSocketById(user.id)
-        this.roomsGateway.blockMember(blockRoomMemberDto, client);
-        return blockMember
+        if (client) {
+            this.roomsGateway.blockUnblockMember(blockRoomMemberDto, client);
+        }
+        return blockUnblockMember
     }
 
 

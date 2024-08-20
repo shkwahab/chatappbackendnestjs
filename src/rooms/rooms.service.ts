@@ -1,9 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
-import { AcceptInviteDto, AcceptRequestDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto } from './dto/room.dto';
+import { AcceptInviteDto, AcceptRequestDto, BlockRoomMemberDto, CreateRoomDto, DeleteRoomMemberShipDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto } from './dto/room.dto';
 import { NotificationService } from 'src/notification/notification.service';
-
 @Injectable()
 export class RoomsService {
   public constructor(
@@ -29,6 +28,7 @@ export class RoomsService {
           userId: room.adminId,
           isApproved: true,
           role: "ADMIN",
+          deletedAt: null
         }
       });
 
@@ -125,16 +125,32 @@ export class RoomsService {
 
     try {
       // Get total count of rooms
-      const totalCount = await this.databaseService.rooms.count();
+      const totalCount = await this.databaseService.rooms.count({
+        where: {
+          roomMemberships: {
+            some: {
+              deletedAt: null
+            }
+          }
+        }
+      });
 
       // Fetch rooms with pagination
       const rooms = await this.databaseService.rooms.findMany({
         skip,
         take: limit,
+        where: {
+          roomMemberships: {
+            some: {
+              deletedAt: null
+            }
+          }
+        },
         include: {
           roomMemberships: true
         }
       });
+
 
       const getLastMessage = async (messageId: string | null) => {
         if (messageId) {
@@ -205,23 +221,26 @@ export class RoomsService {
           roomMemberships: {
             some: {
               userId: id,
-              isApproved: true
+              isApproved: true,
+              deletedAt: null
             },
           },
         },
       });
 
-      // Fetch all rooms for the given user
+
       const allRooms = await this.databaseService.rooms.findMany({
         where: {
           roomMemberships: {
             some: {
               userId: id,
-              isApproved: true
+              isApproved: true,
+              deletedAt: null
             },
           },
         },
       });
+
 
       const getLastMessage = async (messageId: string | null) => {
         if (messageId) {
@@ -316,14 +335,38 @@ export class RoomsService {
       });
       const roomusers = await this.databaseService.user.findMany({
         where: {
-          roomMemberships: {
-            some: {
-              roomId: id,
-              isApproved: true
+            roomMemberships: {
+                some: {
+                    roomId: id,
+                    isApproved: true,
+                    deletedAt: null
+                }
             }
-          }
+        },
+        select: {
+            id: true,
+            name: true,
+            img: true,
+            email: true,
+            username: true,
+            createdAt: true,
+            updatedAt: true,
+            roomMemberships: {
+                where: {
+                    roomId: id,
+                    isApproved: true,
+                    deletedAt: null
+                },
+                select: {
+                    createdAt: true,
+                    userId:true
+                },
+                
+            }
         }
-      })
+    });
+    
+    
       const actions = await this.databaseService.roomMembership.findMany({
         where: {
           roomId: room.id,
@@ -341,11 +384,56 @@ export class RoomsService {
         }
       })
 
-      const users = roomusers.map(({ password, ...userWithoutPassword }) => userWithoutPassword);
       if (!room) {
         throw new BadRequestException("No Room Found");
       }
-      return { room, users, actions };
+      const roomMemberships = await this.databaseService.roomMembership.findMany({
+        where: {
+          roomId: room.id,
+          isApproved: true,
+          deletedAt: null
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true
+            },
+          },
+        },
+      });
+
+      const oldRoomMemberships = await this.databaseService.roomMembership.findMany({
+        where: {
+          roomId: room.id,
+          isApproved: true,
+          deletedAt: {
+            not: null, // Ensure we are filtering memberships where deletedAt is not null
+          },
+        },
+
+        select: {
+          deletedAt: true,
+          user: {
+            select: {
+              id: true,
+              username: true
+            }
+          }
+        },
+      });
+
+      const oldUsers = oldRoomMemberships.filter(membership => membership.deletedAt).map((membership => membership))
+
+      const blockMembers = roomMemberships.filter(membership => membership.isBlocked).map(membership => membership.user);
+      const structuredRoomUsers = roomusers.map(user => {
+        const membership = user.roomMemberships.length > 0 ? user.roomMemberships[0] : null;
+        return {
+            ...user,
+            roomMemberships: membership
+        };
+    });
+      return { room, users:structuredRoomUsers, actions, blockMembers, oldUsers };
     } catch (error) {
       console.log(error)
       throw new BadRequestException(error)
@@ -391,22 +479,27 @@ export class RoomsService {
       if (!room) {
         throw new NotFoundException("Invalid Room Id");
       }
-      await this.databaseService.messageStatus.deleteMany({
-        where: {
-          roomId: room.id
+      // await this.databaseService.messageStatus.deleteMany({
+      //   where: {
+      //     roomId: room.id
+      //   }
+      // })
+      // await this.databaseService.messageMemberShip.deleteMany({
+      //   where: {
+      //     roomId: room.id
+      //   }
+      // })
+      // await this.databaseService.roomMembership.deleteMany({
+      //   where: {
+      //     roomId: room.id
+      //   }
+      // })
+      await this.databaseService.rooms.update({
+        where: { id },
+        data: {
+          deletedAt: new Date()
         }
-      })
-      await this.databaseService.messageMemberShip.deleteMany({
-        where: {
-          roomId: room.id
-        }
-      })
-      await this.databaseService.roomMembership.deleteMany({
-        where: {
-          roomId: room.id
-        }
-      })
-      await this.databaseService.rooms.delete({ where: { id } });
+      });
       return { message: "Deleted successfully" };
     } catch (error) {
       throw new BadRequestException("Failed to Delete" + error);
@@ -550,7 +643,8 @@ export class RoomsService {
             }
           },
           data: {
-            isApproved: true
+            isApproved: true,
+            deletedAt:null
           }
         })
         const room = await this.databaseService.rooms.findUnique({
@@ -597,7 +691,7 @@ export class RoomsService {
     }
   }
 
-  async blockRoomUser(adminId: string, blockRoomMemberDto: BlockRoomMemberDto) {
+  async blockUnblockMember(adminId: string, blockRoomMemberDto: BlockRoomMemberDto) {
     try {
       const admin = await this.findAdminByRoom(blockRoomMemberDto.roomId)
       const sender = await this.databaseService.user.findUnique({ where: { id: admin } })
@@ -606,7 +700,7 @@ export class RoomsService {
           data: {
             userId: blockRoomMemberDto.userId,
             roomId: blockRoomMemberDto.roomId,
-            isBlocked: true
+            isBlocked: blockRoomMemberDto.isBlocked
           },
           where: {
             roomId_userId: {
@@ -617,10 +711,10 @@ export class RoomsService {
         const notification = await this.databaseService.notifications.create({
           data: {
             type: "Action",
-            event: "blockMember",
+            event: "blockUnblockMember",
             senderId: admin,
-            message: `${sender.name} has blocked you`,
-            url: "/rooms/blockMember"
+            message: `${sender.name} has ${blockRoomMemberDto.isBlocked ? "blocked" : "unBlock"}  you`,
+            url: "/rooms/blockUnblockMember"
           }
         })
         await this.databaseService.notificationReceivers.create({
@@ -635,5 +729,25 @@ export class RoomsService {
       throw new BadRequestException("Only Admin has right to block the group user")
     }
   }
+
+  async deleteRoomMemberShip(deleteMemberShipDto: DeleteRoomMemberShipDto) {
+    try {
+      const deleteMembership = await this.databaseService.roomMembership.update({
+        where: {
+          roomId_userId: {
+            roomId: deleteMemberShipDto.roomId,
+            userId: deleteMemberShipDto.userId
+          }
+        },
+        data: {
+          deletedAt: new Date()
+        }
+      })
+      return deleteMembership
+    } catch (error) {
+      throw new BadRequestException(error)
+    }
+  }
 }
+
 

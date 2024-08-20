@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Prisma } from "@prisma/client";
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsBoolean, isNotEmpty, IsNotEmpty, IsString } from "class-validator";
 
 export class MemberRoomDto {
   @ApiProperty({
@@ -150,6 +150,9 @@ export class BlockRoomMemberDto {
   @IsString()
   @ApiProperty()
   roomId: string;
+  @IsBoolean()
+  @ApiProperty()
+  isBlocked: boolean
 }
 
 
@@ -170,6 +173,18 @@ export class RoomsUpdateDto {
 
 
 export class AcceptRequestDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  userId: string
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  roomId: string
+}
+
+
+export class DeleteRoomMemberShipDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
