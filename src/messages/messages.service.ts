@@ -49,9 +49,27 @@ export class MessagesService {
                 where: {
                     messageMembership: {
                         some: {
-                            roomId
+                            roomId,
+
                         },
+
                     },
+                },
+                include: {
+                    messageStatuses: {
+                        where: {
+                            isRead: true
+                        },
+                        select: {
+                            user: {
+                                select: {
+                                    id: true,
+                                    username: true,
+                                    img: true
+                                }
+                            }
+                        }
+                    }
                 },
                 skip,
                 take: Number(limit),
@@ -64,7 +82,8 @@ export class MessagesService {
                 const memberShip = await this.databaseService.messageMemberShip.findUnique({
                     where: {
                         messageId
-                    }
+                    },
+
                 });
 
                 if (!memberShip) {
@@ -104,19 +123,28 @@ export class MessagesService {
             const actionPending = await this.databaseService.roomMembership.count({
                 where: {
                     request: "INVITATION",
-                    roomId:roomId
+                    roomId: roomId
                 }
             })
-            const results = await Promise.all(messages.map(async (item) => {
-                const memberShip = await messageMembersShip(item.id);
-                return {
-                    ...item,
-                    sender: memberShip.sender,
-                    receiver: memberShip.receiver,
 
-                };
-            }));
+            const results = await Promise.all(
+                messages.map(async (item) => {
+                    const memberShip = await messageMembersShip(item.id);
+                    const readMessageUser = item.messageStatuses.map(status => status.user);
+                    return {
+                        id: item.id,
+                        message: item.message,
+                        createdAt: item.createdAt,
+                        updatedAt: item.updatedAt,
+                        sender: memberShip.sender,
+                        receiver: memberShip.receiver,
+                        readMessageUser: readMessageUser 
+                    };
+                })
+            );
+            
 
+            
             const response = {
                 count: totalCount,
                 next: page * Number(limit) < totalCount ? `/messages/rooms/${roomId}?page=${page + 1}&limit=${Number(limit)}` : null,
