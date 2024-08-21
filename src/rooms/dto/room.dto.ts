@@ -13,6 +13,10 @@ export class MemberRequestRoomDto {
   userId: string
   @ApiProperty()
   roomId: string
+  @ApiProperty({
+    required:false
+  })
+  role:"USER"|"ADMIN"
 }
 export class CreateRoomDto {
   @ApiProperty()
@@ -115,6 +119,10 @@ export class JoinRoomDto {
   @IsString()
   @ApiProperty()
   roomId: string;
+  @ApiProperty({
+    required: false
+  })
+  role?: "USER"|"ADMIN";
   @ApiProperty({
     required: false
   })

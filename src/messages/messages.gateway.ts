@@ -6,7 +6,13 @@ import { User } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { ReadMessageDto, SendMessageDto } from './dto/messageDto';
 
-@WebSocketGateway({ namespace: "messages" })
+@WebSocketGateway(5000,{
+  cors:{
+    origin:"*"
+  },
+  namespace:"messages"
+  
+})
 export class MessagesGateway {
   @WebSocketServer()
   server: Server;
@@ -23,7 +29,6 @@ export class MessagesGateway {
       client.disconnect();
       throw new UnauthorizedException('Authorization header not provided');
     }
-
     const token = authHeader.split(' ')[1];
     if (!token) {
       client.disconnect();
@@ -36,8 +41,10 @@ export class MessagesGateway {
       });
       client.handshake.auth = { user: payload };
       this.userSocketMap.set(payload.id, client);
+      console.log(client.id)
     } catch (error) {
       client.disconnect();
+      console.log(error)
       throw new UnauthorizedException('Invalid token');
     }
   }

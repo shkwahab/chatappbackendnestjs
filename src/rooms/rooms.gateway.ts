@@ -2,14 +2,19 @@ import { SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websocke
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
-import { AcceptInviteDto, AcceptRequestDto, BlockRoomMemberDto, CreateRoomDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomDto } from './dto/room.dto';
+import { AcceptInviteDto, AcceptRequestDto, BlockRoomMemberDto, CreateRoomDto, DeleteRoomMemberShipDto, JoinRoomDto, MemberRequestRoomDto, MemberRoomDto, RoomDto } from './dto/room.dto';
 import { UnauthorizedException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
-import { isUndefined } from 'util';
 import { RoomsService } from './rooms.service';
 import { User } from '@prisma/client';
 
-@WebSocketGateway({ namespace: 'rooms' })
+@WebSocketGateway(5000, {
+    namespace: 'rooms',
+    cors: {
+        origin: "*"
+    }
+})
+
 export class RoomsGateway {
     @WebSocketServer()
     server: Server;
@@ -137,14 +142,14 @@ export class RoomsGateway {
             throw new UnauthorizedException('User not authenticated');
         }
 
-        client.join(acceptInviteDto.roomId);
-        console.log(`Client joined room ${acceptInviteDto.roomId}`);
-
         const inviteuser = await this.dbService.user.findUnique({ where: { id: acceptInviteDto.userId } });
-        const inviteUserSocket = this.userSocketMap.get(inviteuser.id)
-        if (inviteuser && inviteuser.id === user.id) {
-            this.server.to(inviteUserSocket.id).emit('acceptInvitation', acceptInviteDto);
-        }
+
+        const socket = this.userSocketMap.get(inviteuser.id)
+        this.server.to(socket.id).emit("acceptInvitation", {
+            inviteuser
+        })
+
+
     }
 
 
@@ -156,16 +161,32 @@ export class RoomsGateway {
             throw new UnauthorizedException('User not authenticated');
         }
 
-        client.join(acceptRequestDto.roomId);
-        console.log(`Client joined room ${acceptRequestDto.roomId}`);
 
-        const room = await this.dbService.rooms.findUnique({ where: { id: acceptRequestDto.roomId } })
+        const acceptuser = await this.dbService.user.findUnique({ where: { id: acceptRequestDto.userId } })
 
-        const roomAdminuser = await this.dbService.user.findUnique({ where: { id: room.adminId } });
-        const socketUser = this.userSocketMap.get(roomAdminuser.id)
-        if (socketUser) {
-            this.server.to(socketUser.id).emit('acceptRequest',acceptRequestDto );
+        console.log("trigger hoy gi ha request wali")
+
+
+        const requestRoomUser = await this.dbService.user.findMany({
+            where: {
+                roomMemberships: {
+                    some: {
+                        id: acceptRequestDto.roomId
+                    }
+                }
+            }
+        })
+        for (const roomUser of requestRoomUser) {
+            const socket = this.userSocketMap.get(roomUser.id);
+            if (socket) {
+                this.server.to(socket.id).emit('acceptRequest', {
+                    roomId: acceptRequestDto.roomId,
+                    senderId: acceptRequestDto.userId,
+                    message: acceptuser.name + " has joined the room"
+                });
+            }
         }
+
     }
 
     @SubscribeMessage('rejectInvitation')
@@ -176,7 +197,7 @@ export class RoomsGateway {
         }
         const socketUser = this.userSocketMap.get(rejectInvitationDto.userId)
         if (socketUser) {
-            this.server.to(socketUser.id).emit('rejectInvitation',rejectInvitationDto );
+            this.server.to(socketUser.id).emit('rejectInvitation', rejectInvitationDto);
         }
     }
 
@@ -187,11 +208,37 @@ export class RoomsGateway {
         if (!user) {
             throw new UnauthorizedException('User not authenticated');
         }
+        const SocketUser = this.userSocketMap.get(blockUnblockMemberDto.userId)
 
-        const adminId = await this.roomsService.findAdminByRoom(blockUnblockMemberDto.roomId);
+        this.server.to(SocketUser.id).emit('blockUnblockMember', blockUnblockMemberDto);
+    }
+    @SubscribeMessage('leaveRoom')
+    async leaveRoom(@MessageBody() leaveRoomDto: DeleteRoomMemberShipDto, @ConnectedSocket() client: Socket) {
+        const user = client.handshake.auth?.user;
 
-        const adminSocket = this.userSocketMap.get(adminId)
-        this.server.to(adminSocket.id).emit('blockUnblockMember', blockUnblockMemberDto);
+        if (!user) {
+            throw new UnauthorizedException('User not authenticated');
+        }
+        const roomUsers = await this.dbService.user.findMany({
+            where: {
+                roomMemberships: {
+                    some: {
+                        roomId: leaveRoomDto.roomId
+                    }
+                }
+            }
+        });
+
+        for (const roomUser of roomUsers) {
+            const socket = this.userSocketMap.get(roomUser.id);
+            if (socket) {
+                this.server.to(socket.id).emit('leaveRoom', {
+                    roomId: leaveRoomDto.roomId,
+                    senderId: user.id,
+                    message: `${leaveRoomDto.userId} user id has left the user`
+                });
+            }
+        }
     }
 }
 

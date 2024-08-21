@@ -335,38 +335,38 @@ export class RoomsService {
       });
       const roomusers = await this.databaseService.user.findMany({
         where: {
-            roomMemberships: {
-                some: {
-                    roomId: id,
-                    isApproved: true,
-                    deletedAt: null
-                }
+          roomMemberships: {
+            some: {
+              roomId: id,
+              isApproved: true,
+              deletedAt: null
             }
+          }
         },
         select: {
-            id: true,
-            name: true,
-            img: true,
-            email: true,
-            username: true,
-            createdAt: true,
-            updatedAt: true,
-            roomMemberships: {
-                where: {
-                    roomId: id,
-                    isApproved: true,
-                    deletedAt: null
-                },
-                select: {
-                    createdAt: true,
-                    userId:true
-                },
-                
-            }
+          id: true,
+          name: true,
+          img: true,
+          email: true,
+          username: true,
+          createdAt: true,
+          updatedAt: true,
+          roomMemberships: {
+            where: {
+              roomId: id,
+              isApproved: true,
+              deletedAt: null
+            },
+            select: {
+              createdAt: true,
+              userId: true
+            },
+
+          }
         }
-    });
-    
-    
+      });
+
+
       const actions = await this.databaseService.roomMembership.findMany({
         where: {
           roomId: room.id,
@@ -429,11 +429,11 @@ export class RoomsService {
       const structuredRoomUsers = roomusers.map(user => {
         const membership = user.roomMemberships.length > 0 ? user.roomMemberships[0] : null;
         return {
-            ...user,
-            roomMemberships: membership
+          ...user,
+          roomMemberships: membership
         };
-    });
-      return { room, users:structuredRoomUsers, actions, blockMembers, oldUsers };
+      });
+      return { room, users: structuredRoomUsers, actions, blockMembers, oldUsers };
     } catch (error) {
       console.log(error)
       throw new BadRequestException(error)
@@ -527,23 +527,21 @@ export class RoomsService {
       throw new Error('Room not found');
     }
 
-    // Check if the user is already a member of the room
-    const existingMembership = await this.databaseService.roomMembership.findUnique({
+   
+
+    const roomMembership = await this.databaseService.roomMembership.upsert({
       where: {
         roomId_userId: {
+          userId: joinRoomDto.userId,
           roomId: joinRoomDto.roomId,
-          userId: joinRoomDto.userId
         }
-      }
-    });
-    // console.log(existingMembership)
-    if (existingMembership) {
-      throw new BadRequestException('User is already a member of the room');
-    }
-
-    // Create a new room membership
-    const roomMembership = await this.databaseService.roomMembership.create({
-      data: {
+      },
+      update: {
+        role: joinRoomDto.role || "USER",
+        request: room.isPublic ? "NONE" : "INVITATION",
+        isApproved: room.isPublic ? true : false
+      },
+      create: {
         userId: joinRoomDto.userId,
         roomId: joinRoomDto.roomId,
         role: "USER",
@@ -551,6 +549,7 @@ export class RoomsService {
         isApproved: room.isPublic ? true : false
       }
     });
+
 
     // Notify admin if the room is not public
     if (!room.isPublic) {
@@ -566,7 +565,6 @@ export class RoomsService {
           url: "/rooms/join"
         }
       });
-
       await this.databaseService.notificationReceivers.create({
         data: { notificationId: notification.id, receiverId }
       });
@@ -592,7 +590,7 @@ export class RoomsService {
               roomId: acceptInviteDto.roomId
             }
           },
-          data: { isApproved: true }
+          data: { isApproved: true,deletedAt:null }
         })
         const notification = await this.databaseService.notifications.create({
           data: {
@@ -644,7 +642,7 @@ export class RoomsService {
           },
           data: {
             isApproved: true,
-            deletedAt:null
+            deletedAt: null
           }
         })
         const room = await this.databaseService.rooms.findUnique({
@@ -732,15 +730,12 @@ export class RoomsService {
 
   async deleteRoomMemberShip(deleteMemberShipDto: DeleteRoomMemberShipDto) {
     try {
-      const deleteMembership = await this.databaseService.roomMembership.update({
+      const deleteMembership = await this.databaseService.roomMembership.delete({
         where: {
           roomId_userId: {
             roomId: deleteMemberShipDto.roomId,
             userId: deleteMemberShipDto.userId
           }
-        },
-        data: {
-          deletedAt: new Date()
         }
       })
       return deleteMembership
