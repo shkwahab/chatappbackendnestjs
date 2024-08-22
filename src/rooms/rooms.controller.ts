@@ -135,11 +135,10 @@ export class RoomsController {
     async exitRoom(@Body() deleteRoomMemberShipDto:DeleteRoomMemberShipDto, @Request() req) {
         const user: User = req.user
         const exitRoom = await this.roomsService.deleteRoomMemberShip(deleteRoomMemberShipDto)
-        // PENDING SOCKET TO AWARE USER HAS LEFT THE GROUP
-        // const client = await this.roomsGateway.findSocketById(user.id)
-        // if (client) {
-        //     this.roomsGateway.acceptRequest(acceptRequestDto, client);
-        // }
+        const client = await this.roomsGateway.findSocketById(user.id)
+        if (client) {
+            this.roomsGateway.leaveRoom(deleteRoomMemberShipDto,client)
+        }
 
         return exitRoom;
     }

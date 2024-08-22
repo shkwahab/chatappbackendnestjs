@@ -22,6 +22,10 @@ export class UpdateMessageDto {
     @IsString()
     @IsNotEmpty()
     @ApiProperty()
+    roomId: string
+    @IsString()
+    @IsNotEmpty()
+    @ApiProperty()
     messageId: string
     @IsString()
     @IsNotEmpty()
@@ -32,6 +36,7 @@ export class UpdateMessageDto {
     @ApiProperty()
     message: string
 }
+
 
 
 export class ReadMessageDto {

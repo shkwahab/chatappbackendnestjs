@@ -138,13 +138,13 @@ export class MessagesService {
                         updatedAt: item.updatedAt,
                         sender: memberShip.sender,
                         receiver: memberShip.receiver,
-                        readMessageUser: readMessageUser 
+                        readMessageUser: readMessageUser
                     };
                 })
             );
-            
 
-            
+
+
             const response = {
                 count: totalCount,
                 next: page * Number(limit) < totalCount ? `/messages/rooms/${roomId}?page=${page + 1}&limit=${Number(limit)}` : null,
@@ -236,7 +236,7 @@ export class MessagesService {
         try {
             const messageMemberShip = await this.databaseService.messageMemberShip.findUnique({
                 where: {
-                    messageId: updateMessageDto.messageId
+                    messageId: updateMessageDto.messageId,
                 }
             })
             if (messageMemberShip.senderId === updateMessageDto.userId) {

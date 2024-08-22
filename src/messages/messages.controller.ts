@@ -52,7 +52,13 @@ export class MessagesController {
     @ApiBody({ type: UpdateMessageDto })
     @ApiResponse({ status: 201, description: 'Message Updated Successfully.' }) // Success response
     @ApiResponse({ status: 400, description: 'Bad Request.' }) // Error response
-    async updateUserMessage(@Body(ValidationPipe) updateMessageDto: UpdateMessageDto) {
+    async updateUserMessage(@Body(ValidationPipe) updateMessageDto: UpdateMessageDto, @Request() req: any) {
+        const user: User = req.user
+        console.log(updateMessageDto)
+        const client = await this.messageGateway.findSocketById(user.id)
+        if (client) {
+            this.messageGateway.editMessage(updateMessageDto, client)
+        }
         return await this.messageService.updateMessage(updateMessageDto)
     }
 

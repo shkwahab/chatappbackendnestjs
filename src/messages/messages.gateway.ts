@@ -4,14 +4,13 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
-import { ReadMessageDto, SendMessageDto } from './dto/messageDto';
+import { ReadMessageDto, SendMessageDto, UpdateMessageDto } from './dto/messageDto';
 
 @WebSocketGateway(5000,{
   cors:{
     origin:"*"
   },
   namespace:"messages"
-  
 })
 export class MessagesGateway {
   @WebSocketServer()
@@ -101,6 +100,46 @@ export class MessagesGateway {
           roomId: sendMessage.roomId,
           senderId: user.id,
           message: sendMessage.message
+        });
+      }
+    }
+  }
+  @SubscribeMessage('editMessage')
+  async editMessage(@MessageBody() editMessageDto: UpdateMessageDto, @ConnectedSocket() client: Socket) {
+    if (!client.handshake || !client.handshake.auth) {
+      throw new UnauthorizedException('Client not connected or handshake information missing');
+    }
+  
+    const user: User = client.handshake.auth.user;
+    
+    // Check if the user is a member of the room
+    const isMember = await this.databaseService.roomMembership.findFirst({
+      where: {
+        roomId: editMessageDto.roomId,
+        userId: user.id,
+      },
+    });
+    if (!isMember) {
+      return;
+    }
+  
+    const roomUsers = await this.databaseService.user.findMany({
+      where: {
+        roomMemberships: {
+          some: {
+            roomId: editMessageDto.roomId
+          }
+        }
+      }
+    });
+  
+    for (const roomUser of roomUsers) {
+      const socket = this.userSocketMap.get(roomUser.id);
+      if (socket) {
+        this.server.to(socket.id).emit('editMessage', {
+          roomId: editMessageDto.roomId,
+          senderId: user.id,
+          message: editMessageDto.message
         });
       }
     }
