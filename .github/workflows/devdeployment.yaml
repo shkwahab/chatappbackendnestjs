@@ -88,7 +88,7 @@ jobs:
             tar -xzf node_modules.tar.gz
             sudo mkdir -p /usr/share/apis/chatapp
             sudo rm -rf /usr/share/apis/chatapp/*
-            sudo mv dist/* /usr/share/apis/chatapp/
+            sudo mv dist/ /usr/share/apis/chatapp/
             sudo mv node_modules /usr/share/apis/chatapp/
             sudo mv package.json /usr/share/apis/chatapp/
             sudo rm -rf app.tar.gz
