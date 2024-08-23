@@ -40,7 +40,7 @@ jobs:
 
       - name: Copy build to server
         run: |
-          scp -i ${{ secrets.DEPLOY_PRIVATE_KEY }} dist.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/chatapp/
+          scp -i ${{ secrets.DEPLOY_PRIVATE_KEY }} -v dist.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/chatapp/
 
       - name: Finalize Deployment via SSH
         uses: appleboy/ssh-action@master
@@ -49,10 +49,10 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            cd /home/kaliwahab/chatapp
+            cd ~/chatapp
             tar -xzf dist.tar.gz
             sudo mkdir -p /usr/share/apis/chatapp
             sudo rm -rf /usr/share/apis/chatapp/*
             sudo mv dist/* /usr/share/apis/chatapp/
-            sudo rm -rf /home/kaliwahab/chatapp/dist.tar.gz
+            sudo rm -rf dist.tar.gz
             echo "Deployment finished."
