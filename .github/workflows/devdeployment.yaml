@@ -35,22 +35,24 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Compress build
-        run: tar -czf dist.tar.gz dist
-
-      - name: Upload build to server
-        run: |
-          scp -i ${{ secrets.DEPLOY_PRIVATE_KEY }} dist.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/home/kaliwahab/
-
-      - name: Verify temporary directory on server
+      - name: Deploy via SSH and Clean Target Directory
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            echo "Listing contents of /home/kaliwahab/chatapp:"
-            ls -l /home/kaliwahab
+            cd /usr/share/apis/chatapp
+            sudo rm -rf *
+
+      - name: Copy build to server
+        uses: picodebr/copy-action@v1
+        with:
+          source: dist
+          destination: ~/chatapp
+          ssh_host: ${{ secrets.DEPLOY_HOST }}
+          ssh_user: ${{ secrets.DEPLOY_USER }}
+          ssh_key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
 
       - name: Finalize Deployment via SSH
         uses: appleboy/ssh-action@master
@@ -59,14 +61,5 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            # Extract build
-            tar -xzf dist.tar.gz
-            # Ensure the target directory exists
-            sudo mkdir -p /usr/share/apis/chatapp
-            # Clean up old files
-            sudo rm -rf /usr/share/apis/chatapp/*
-            # Move new files
-            sudo mv dist/* /usr/share/apis/chatapp/
-            # Clean up temporary files
-            sudo rm -rf dist.tar.gz
-            echo "Deployment finished."
+            sudo mv chatapp/* /usr/share/apis/chatapp  
+            sudo rm -rf chatapp
