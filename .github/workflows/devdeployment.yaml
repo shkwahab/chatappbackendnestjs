@@ -42,7 +42,7 @@ jobs:
             exit 1
           fi
 
-      - name: Deploy via SSH and Clean Target Directory
+      - name: Clean Target Directory on Server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
