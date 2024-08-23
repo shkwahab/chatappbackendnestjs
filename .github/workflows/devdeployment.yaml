@@ -38,9 +38,14 @@ jobs:
       - name: Compress build
         run: tar -czf dist.tar.gz dist
 
-      - name: Copy build to server
-        run: |
-          scp -i ${{ secrets.DEPLOY_PRIVATE_KEY }} -v dist.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/chatapp/
+      - name: Copy Build to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          source: "dist.tar.gz"
+          target: ~/chatapp
 
       - name: Finalize Deployment via SSH
         uses: appleboy/ssh-action@master
