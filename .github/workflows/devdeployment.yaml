@@ -29,45 +29,20 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build
-        run: pnpm run build
-
-      - name: Compress Build and Dependencies
+      - name: Compress Project Files
         run: |
-          tar -czf app.tar.gz dist
-      
-      
-      - name: Clear previous build
+          tar -czf app.tar.gz *
+
+      - name: Clear previous build on server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            rm -rf *
+            rm -rf ~/chatapp/*
 
-      - name: Copy Packages Files Build to Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
-          source: "package.json"
-          target: ~/chatapp
-
-      - name: Copy Node Modules Folder Build to Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
-          source: "node_modules"
-          target: ~/chatapp
-
-      - name: Copy Dist to Server
+      - name: Copy Project Files to Server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -85,11 +60,9 @@ jobs:
           script: |
             cd ~/chatapp
             tar -xzf app.tar.gz
-            mv dist/ ~/chatapp
-            cd ~/chatapp
+            rm app.tar.gz
             cat << 'EOF' > .env
             ${{ secrets.ENVIRONMENT }}
             EOF
-            sudo rm -rf app.tar.gz
+            pnpm i && pnpm build 
             echo "Deployment finished."
-      
