@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: development 
+    environment: development
 
     steps:
       - name: Checkout code
@@ -35,6 +35,13 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Verify dist Directory
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Error: dist directory does not exist"
+            exit 1
+          fi
+
       - name: Deploy via SSH and Clean Target Directory
         uses: appleboy/ssh-action@master
         with:
@@ -42,7 +49,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            cd /usr/share/apis/chatapp
+            cd /usr/share/apis/chatapp || { echo "Directory /usr/share/apis/chatapp does not exist"; exit 1; }
             sudo rm -rf *
 
       - name: Sync build to server
@@ -55,4 +62,10 @@ jobs:
             rsync -avz --delete dist/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/usr/share/apis/chatapp/
 
       - name: Finalize Deployment
-        run: sudo rm -rf scp
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          script: |
+            sudo rm -rf scp || true
