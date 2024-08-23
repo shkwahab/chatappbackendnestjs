@@ -86,5 +86,10 @@ jobs:
             cd ~/chatapp
             tar -xzf app.tar.gz
             mv dist/ ~/chatapp
+            cd ~/chatapp
+            cat << 'EOF' > .env
+      ${{ secrets.ENVIRONMENT }}
+      EOF
             sudo rm -rf app.tar.gz
             echo "Deployment finished."
+      
