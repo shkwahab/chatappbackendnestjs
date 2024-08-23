@@ -98,7 +98,8 @@ pnpm start
 
 ## Swagger API Documentation
 
-Run the server visit: [localhost:8000/api-docs](http://localhost:8000/api-docs/)
+Run the server visit: [localhost:9000/api-docs](http://localhost:9000/api-docs/)
+Here is the Frontend App Github Repo visit: [Frontend App](https://github.com/shkwahab/chatappUi)
 
 ### Notifications
 
