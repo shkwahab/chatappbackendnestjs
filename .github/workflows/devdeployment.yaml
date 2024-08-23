@@ -38,6 +38,16 @@ jobs:
       - name: Compress Build and Dependencies
         run: |
           tar -czf app.tar.gz dist
+      
+      
+      - name: Clear previous build
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          script: |
+            rm -rf *
 
       - name: Copy Packages Files Build to Server
         uses: appleboy/scp-action@v0.1.7
