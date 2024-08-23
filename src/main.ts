@@ -5,7 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const allowedOrigins = ['http://localhost:9000', "http://localhost:5173","http://localhost:5173/"];
+  const allowedOrigins = ['http://localhost:9000', "https://apichat.frii.site", "http://localhost:5173","http://localhost:5173/"];
   const config = new DocumentBuilder()
     .setTitle('Chat Application API')
     .setDescription('The chat application API description')
