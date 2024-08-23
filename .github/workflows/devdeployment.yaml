@@ -42,27 +42,20 @@ jobs:
             exit 1
           fi
 
-      - name: Clean Target Directory on Server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
-          script: |
-            cd /usr/share/apis/chatapp || { echo "Directory /usr/share/apis/chatapp does not exist"; exit 1; }
-            sudo rm -rf *
-
-      - name: Sync build to server
+      - name: Sync build to server (Temporary Directory)
         run: |
-          rsync -avz --delete dist/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/usr/share/apis/chatapp/
+          rsync -avz --delete dist/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/home/kaliwahab/chatapp
         env:
           RSYNC_RSH: "ssh -i ${{ secrets.DEPLOY_PRIVATE_KEY }}"
 
-      - name: Finalize Deployment
+      - name: Finalize Deployment (Move and Clean)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            sudo rm -rf scp || true
+            sudo rm -rf /usr/share/apis/chatapp/*
+            sudo mv /home/kaliwahab/chatapp/* /usr/share/apis/chatapp/
+            sudo rm -rf /home/kaliwahab/chatapp
+
