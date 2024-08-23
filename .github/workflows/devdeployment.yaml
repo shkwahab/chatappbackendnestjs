@@ -65,10 +65,17 @@ jobs:
             cat << 'EOF' > .env
             ${{ secrets.ENVIRONMENT }}
             EOF
+            cat << 'EOF' > ecosystem.config.js
+            ${{ secrets.ECOSYSTEM }}
+            EOF
             npx prisma db push
             npx prisma generate
             pnpm i && pnpm build 
             cd ..
             sudo mv ~/chatapp /usr/share/apis/chatapp
+            cd /usr/share/apis/chatapp
+            pm2 delete chatbackend || true
+            pm2 start ecosystem.config.js --name chatbackend
             echo "Deployment finished."
+            
 
