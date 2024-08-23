@@ -60,7 +60,6 @@ jobs:
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
             # Extract build
-            cd /home/kaliwahab
             tar -xzf dist.tar.gz
             # Ensure the target directory exists
             sudo mkdir -p /usr/share/apis/chatapp
@@ -69,5 +68,5 @@ jobs:
             # Move new files
             sudo mv dist/* /usr/share/apis/chatapp/
             # Clean up temporary files
-            sudo rm -rf /home/kaliwahab/dist.tar.gz
+            sudo rm -rf dist.tar.gz
             echo "Deployment finished."
