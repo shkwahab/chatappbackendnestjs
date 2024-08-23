@@ -37,7 +37,7 @@ jobs:
 
       - name: Compress Build and Dependencies
         run: |
-          tar -czf app.tar.gz dist node_modules package.json
+          tar -czf app.tar.gz node_modules package.json
 
       - name: Create Temp Build Folder
         uses: appleboy/ssh-action@master
