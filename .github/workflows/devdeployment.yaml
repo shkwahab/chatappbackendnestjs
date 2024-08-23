@@ -40,7 +40,8 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            rm -rf ~/chatapp/*
+            mkdir ~/chatapp
+            sudo rm -rf /usr/share/apis/chatapp
 
       - name: Copy Project Files to Server
         uses: appleboy/scp-action@v0.1.7
@@ -64,6 +65,10 @@ jobs:
             cat << 'EOF' > .env
             ${{ secrets.ENVIRONMENT }}
             EOF
+            npx prisma db push
+            npx prisma generate
             pnpm i && pnpm build 
+            cd ..
+            sudo mv ~/chatapp /usr/share/apis/chatapp
             echo "Deployment finished."
 
