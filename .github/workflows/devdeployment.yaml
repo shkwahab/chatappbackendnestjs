@@ -44,7 +44,7 @@ jobs:
 
       - name: Sync build to server (Temporary Directory)
         run: |
-          rsync -avz --delete dist/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/home/kaliwahab/chatapp
+          rsync -avz --delete dist/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/home/kaliwahab/chatapp/
         env:
           RSYNC_RSH: "ssh -i ${{ secrets.DEPLOY_PRIVATE_KEY }}"
 
@@ -55,7 +55,13 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
+            # Ensure the target directory exists
+            sudo mkdir -p /usr/share/apis/chatapp
+            # Ensure proper permissions
+            sudo chown ${{ secrets.DEPLOY_USER }} /usr/share/apis/chatapp
+            # Clean up old files
             sudo rm -rf /usr/share/apis/chatapp/*
+            # Move new files
             sudo mv /home/kaliwahab/chatapp/* /usr/share/apis/chatapp/
+            # Remove temporary files
             sudo rm -rf /home/kaliwahab/chatapp
-
