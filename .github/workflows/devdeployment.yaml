@@ -38,7 +38,6 @@ jobs:
       - name: Compress Build and Dependencies
         run: |
           tar -czf app.tar.gz dist
-          tar -czf node_modules.tar.gz node_modules 
 
       - name: Copy Packages Files Build to Server
         uses: appleboy/scp-action@v0.1.7
@@ -55,7 +54,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
-          source: "node_modules.tar.gz"
+          source: "node_modules"
           target: ~/chatapp
 
       - name: Copy Dist to Server
@@ -76,10 +75,6 @@ jobs:
           script: |
             cd ~/chatapp
             tar -xzf app.tar.gz
-            tar -xzf node_modules.tar.gz
             mv dist/ ~/chatapp
-            mv node_modules ~/chatapp
-            mv package.json ~/chatapp
             sudo rm -rf app.tar.gz
-            sudo rm -rf node_modules.tar.gz
             echo "Deployment finished."
