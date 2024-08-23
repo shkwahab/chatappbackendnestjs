@@ -35,24 +35,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Deploy via SSH and Clean Target Directory
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
-          script: |
-            cd /usr/share/apis/chatapp
-            sudo rm -rf *
+      - name: Compress build
+        run: tar -czf dist.tar.gz dist
 
       - name: Copy build to server
-        uses: picodebr/copy-action@v1
-        with:
-          source: dist
-          destination: ~/chatapp
-          ssh_host: ${{ secrets.DEPLOY_HOST }}
-          ssh_user: ${{ secrets.DEPLOY_USER }}
-          ssh_key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+        run: |
+          scp -i ${{ secrets.DEPLOY_PRIVATE_KEY }} dist.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/chatapp/
 
       - name: Finalize Deployment via SSH
         uses: appleboy/ssh-action@master
@@ -61,5 +49,10 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            sudo mv chatapp/* /usr/share/apis/chatapp  
-            sudo rm -rf chatapp
+            cd /home/kaliwahab/chatapp
+            tar -xzf dist.tar.gz
+            sudo mkdir -p /usr/share/apis/chatapp
+            sudo rm -rf /usr/share/apis/chatapp/*
+            sudo mv dist/* /usr/share/apis/chatapp/
+            sudo rm -rf /home/kaliwahab/chatapp/dist.tar.gz
+            echo "Deployment finished."
