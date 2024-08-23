@@ -49,6 +49,15 @@ jobs:
           script: |
             mkdir -p ~/chatapp
 
+      - name: Copy Packages Files Build to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          source: "package.json"
+          target: ~/chatapp
+
       - name: Copy Node Modules Folder Build to Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -80,9 +89,10 @@ jobs:
             sudo mkdir -p /usr/share/apis/chatapp
             sudo rm -rf /usr/share/apis/chatapp/*
             sudo mv dist/* /usr/share/apis/chatapp/
-            sudo mv node_modules/* /usr/share/apis/chatapp/
+            sudo mv node_modules /usr/share/apis/chatapp/
             sudo mv package.json /usr/share/apis/chatapp/
             sudo rm -rf app.tar.gz
             sudo rm -rf node_modules.tar.gz
+            sudo rm -rf package.json
             echo "Deployment finished."
             rm -rf ~/chatapp
