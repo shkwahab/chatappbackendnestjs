@@ -14,9 +14,9 @@ export class MemberRequestRoomDto {
   @ApiProperty()
   roomId: string
   @ApiProperty({
-    required:false
+    required: false
   })
-  role:"USER"|"ADMIN"
+  role: "USER" | "ADMIN"
 }
 export class CreateRoomDto {
   @ApiProperty()
@@ -122,7 +122,7 @@ export class JoinRoomDto {
   @ApiProperty({
     required: false
   })
-  role?: "USER"|"ADMIN";
+  role?: "USER" | "ADMIN";
   @ApiProperty({
     required: false
   })
@@ -202,3 +202,4 @@ export class DeleteRoomMemberShipDto {
   @IsNotEmpty()
   roomId: string
 }
+
