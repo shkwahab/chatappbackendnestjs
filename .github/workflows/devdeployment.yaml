@@ -88,8 +88,8 @@ jobs:
             mv dist/ ~/chatapp
             cd ~/chatapp
             cat << 'EOF' > .env
-      ${{ secrets.ENVIRONMENT }}
-      EOF
+            ${{ secrets.ENVIRONMENT }}
+            EOF
             sudo rm -rf app.tar.gz
             echo "Deployment finished."
       
