@@ -38,6 +38,15 @@ jobs:
       - name: Compress build
         run: tar -czf dist.tar.gz dist
 
+      - name: Create Temp Build Folder
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+          script: |
+            mkdir chatapp
+
       - name: Copy Build to Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -59,5 +68,6 @@ jobs:
             sudo mkdir -p /usr/share/apis/chatapp
             sudo rm -rf /usr/share/apis/chatapp/*
             sudo mv dist/* /usr/share/apis/chatapp/
-            sudo rm -rf dist.tar.gz
+            sudo rm -rf dist.tar.gz dist
             echo "Deployment finished."
+            rm -rf ~/chatapp
