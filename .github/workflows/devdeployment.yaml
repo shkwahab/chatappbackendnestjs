@@ -66,3 +66,4 @@ jobs:
             EOF
             pnpm i && pnpm build 
             echo "Deployment finished."
+
