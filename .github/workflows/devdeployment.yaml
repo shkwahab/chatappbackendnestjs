@@ -52,14 +52,14 @@ jobs:
             cd /usr/share/apis/chatapp || { echo "Directory /usr/share/apis/chatapp does not exist"; exit 1; }
             sudo rm -rf *
 
-      - name: Sync build to server
-        uses: appleboy/ssh-action@master
+      - name: Copy build to server
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
-          script: |
-            sudo rsync -avz --delete dist/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/usr/share/apis/chatapp/
+          source: 'dist/*'
+          target: '/usr/share/apis/chatapp/'
 
       - name: Finalize Deployment
         uses: appleboy/ssh-action@master
