@@ -35,24 +35,22 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Deploy via SSH and Clean Target Directory
+      - name: Compress build
+        run: tar -czf dist.tar.gz dist
+
+      - name: Upload build to server
+        run: |
+          scp -i ${{ secrets.DEPLOY_PRIVATE_KEY }} dist.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/home/kaliwahab/chatapp/
+
+      - name: Verify temporary directory on server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            cd /usr/share/apis/chatapp
-            sudo rm -rf *
-
-      - name: Copy build to server
-        uses: garygrossgarten/github-action-scp@release
-        with:
-          local: dist
-          remote: scp/build
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          privateKey: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+            echo "Listing contents of /home/kaliwahab/chatapp:"
+            ls -l /home/kaliwahab/chatapp
 
       - name: Finalize Deployment via SSH
         uses: appleboy/ssh-action@master
@@ -61,5 +59,15 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
-            sudo mv scp/build/* /usr/share/apis/chatapp  
-            sudo rm -rf scp
+            # Extract build
+            cd /home/kaliwahab/chatapp
+            tar -xzf dist.tar.gz
+            # Ensure the target directory exists
+            sudo mkdir -p /usr/share/apis/chatapp
+            # Clean up old files
+            sudo rm -rf /usr/share/apis/chatapp/*
+            # Move new files
+            sudo mv dist/* /usr/share/apis/chatapp/
+            # Clean up temporary files
+            sudo rm -rf /home/kaliwahab/chatapp/dist.tar.gz
+            echo "Deployment finished."
