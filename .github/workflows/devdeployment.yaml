@@ -42,12 +42,10 @@ jobs:
             exit 1
           fi
 
-      - name: Sync build to server (Temporary Directory)
+      - name: Copy build to server
         run: |
-          rsync -avz --delete dist/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/chatapp
-        env:
-          RSYNC_RSH: "ssh -i ${{ secrets.DEPLOY_PRIVATE_KEY }}"
-
+          scp -i ${{ secrets.DEPLOY_PRIVATE_KEY }} -r dist/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/home/kaliwahab/chatapp/
+        
       - name: Verify temporary directory on server
         uses: appleboy/ssh-action@master
         with:
@@ -56,9 +54,9 @@ jobs:
           key: ${{ secrets.DEPLOY_PRIVATE_KEY }}
           script: |
             echo "Listing contents of /home/kaliwahab/chatapp:"
-            ls -l /home/kaliwahab/chatapp
+            ls -l /home/kaliwahab/chatapp || { echo "Failed to list /home/kaliwahab/chatapp"; exit 1; }
             echo "Listing contents of /usr/share/apis/chatapp:"
-            ls -l /usr/share/apis/chatapp
+            ls -l /usr/share/apis/chatapp || { echo "Failed to list /usr/share/apis/chatapp"; exit 1; }
 
       - name: Finalize Deployment (Move and Clean)
         uses: appleboy/ssh-action@master
@@ -76,5 +74,5 @@ jobs:
             # Move new files
             sudo mv /home/kaliwahab/chatapp/* /usr/share/apis/chatapp/
             # Remove temporary files
-            sudo rm -rf ~/chatapp
+            sudo rm -rf /home/kaliwahab/chatapp
             echo "Deployment finished."
