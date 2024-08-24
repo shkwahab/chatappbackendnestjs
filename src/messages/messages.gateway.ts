@@ -6,11 +6,11 @@ import { User } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { ReadMessageDto, SendMessageDto, UpdateMessageDto } from './dto/messageDto';
 
-@WebSocketGateway(5000,{
-  cors:{
-    origin:"*"
+@WebSocketGateway(5000, {
+  cors: {
+    origin: ["http://localhost:5000", "https://socketchat.chickenkiller.com"]
   },
-  namespace:"messages"
+  namespace: "messages"
 })
 export class MessagesGateway {
   @WebSocketServer()
@@ -69,9 +69,9 @@ export class MessagesGateway {
     if (!client.handshake || !client.handshake.auth) {
       throw new UnauthorizedException('Client not connected or handshake information missing');
     }
-  
+
     const user: User = client.handshake.auth.user;
-    
+
     // Check if the user is a member of the room
     const isMember = await this.databaseService.roomMembership.findFirst({
       where: {
@@ -82,7 +82,7 @@ export class MessagesGateway {
     if (!isMember) {
       return;
     }
-  
+
     const roomUsers = await this.databaseService.user.findMany({
       where: {
         roomMemberships: {
@@ -92,7 +92,7 @@ export class MessagesGateway {
         }
       }
     });
-  
+
     for (const roomUser of roomUsers) {
       const socket = this.userSocketMap.get(roomUser.id);
       if (socket) {
@@ -109,9 +109,9 @@ export class MessagesGateway {
     if (!client.handshake || !client.handshake.auth) {
       throw new UnauthorizedException('Client not connected or handshake information missing');
     }
-  
+
     const user: User = client.handshake.auth.user;
-    
+
     // Check if the user is a member of the room
     const isMember = await this.databaseService.roomMembership.findFirst({
       where: {
@@ -122,7 +122,7 @@ export class MessagesGateway {
     if (!isMember) {
       return;
     }
-  
+
     const roomUsers = await this.databaseService.user.findMany({
       where: {
         roomMemberships: {
@@ -132,7 +132,7 @@ export class MessagesGateway {
         }
       }
     });
-  
+
     for (const roomUser of roomUsers) {
       const socket = this.userSocketMap.get(roomUser.id);
       if (socket) {
@@ -144,7 +144,7 @@ export class MessagesGateway {
       }
     }
   }
-  
+
   @SubscribeMessage('unReadMessage')
   async unReadMessage(@MessageBody() roomId: string, @ConnectedSocket() client: Socket) {
     const user: User = client.handshake.auth.user;
