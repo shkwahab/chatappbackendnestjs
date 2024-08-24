@@ -8,7 +8,7 @@ import { ReadMessageDto, SendMessageDto, UpdateMessageDto } from './dto/messageD
 
 @WebSocketGateway(5000, {
   cors: {
-    origin: ["http://localhost:5000", "https://socketchat.chickenkiller.com"]
+    origin: "*"
   },
   namespace: "messages"
 })

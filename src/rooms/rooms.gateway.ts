@@ -11,7 +11,7 @@ import { User } from '@prisma/client';
 @WebSocketGateway(5000, {
     namespace: 'rooms',
     cors: {
-        origin: ["http://localhost:5000","https://socketchat.chickenkiller.com"]
+        origin: "*"
     }
 })
 
