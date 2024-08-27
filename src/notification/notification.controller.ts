@@ -1,7 +1,7 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { NotificationDto } from './dto/notifierDto';
+import { NotificationDto, SubscriptionDto } from './dto/notifierDto';
 
 @ApiTags("notification")
 @Controller('notification')
@@ -19,4 +19,12 @@ export class NotificationController {
     return this.notificationService.findAll(id, pagenumber);
   }
 
+  @Post("subscribe")
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Register Subscriber' }) 
+  @ApiResponse({ status: 200, description: 'Subscriber Registered', type: SubscriptionDto })
+  @ApiResponse({ status: 400, description: 'Bad Request.' }) 
+  Subscribe(@Body() subscribeDto: SubscriptionDto) {
+    return this.notificationService.subscribe(subscribeDto);
+  }
 }

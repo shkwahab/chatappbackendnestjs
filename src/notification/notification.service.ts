@@ -22,7 +22,7 @@ export class NotificationService {
 
     async findAll(userId: string, page: number = 1) {
         const PAGE_SIZE = 10;
-    
+
         // Fetch notifications for the user, sorted by creation date (newest first)
         const notifications = await this.databaseService.notifications.findMany({
             where: {
@@ -36,7 +36,7 @@ export class NotificationService {
             skip: (page - 1) * PAGE_SIZE,
             take: PAGE_SIZE,
         });
-    
+
         const totalNotifications = await this.databaseService.notifications.count({
             where: {
                 NotificationReceivers: {
@@ -46,24 +46,24 @@ export class NotificationService {
                 }
             }
         });
-    
+
         // Fetch sender details and exclude email and password
         const notificationsWithSender = await Promise.all(
             notifications.map(async (notification) => {
-                const { email, password,createdAt,updatedAt, ...sender } = await this.databaseService.user.findUnique({
+                const { email, password, createdAt, updatedAt, ...sender } = await this.databaseService.user.findUnique({
                     where: { id: notification.senderId }
                 });
-    
+
                 return {
                     ...notification,
                     sender: sender,
                 };
             })
         );
-    
+
         // Determine if there's a next page
         const hasNextPage = (page * PAGE_SIZE) < totalNotifications;
-    
+
         // Create pagination response
         const paginatedNotifications = {
             notifications: notificationsWithSender,
@@ -76,12 +76,12 @@ export class NotificationService {
                 previousPage: page > 1 ? `/notifications/${userId}?page=${page - 1}` : null,
             },
         };
-    
+
         return paginatedNotifications;
     }
-    
 
-    async sendPushNotification(notificationId: string,url:string) {
+
+    async sendPushNotification(notificationId: string, url: string) {
         try {
             const notification = await this.databaseService.notifications.findUnique({
                 where: {
@@ -99,18 +99,20 @@ export class NotificationService {
                     userId: { in: receiverIds }
                 }
             });
+            
             for (const subscriber of subscribers) {
                 try {
                     const pushSubscription = {
                         endpoint: subscriber.endpoint,
                         keys: subscriber.keys as Key
                     };
-                    await webPush.sendNotification(pushSubscription, JSON.stringify({
+                   const res= await webPush.sendNotification(pushSubscription, JSON.stringify({
                         title: "Chat App",
                         body: notification.message,
                         icon: process.env.APP_ICON,
                         url
                     }));
+                    console.log(res)
                 } catch (error) {
                     console.error('Error sending notification:', error);
                 }
