@@ -110,3 +110,4 @@ Here is the Frontend App Github Repo visit: [Frontend App](https://github.com/sh
 
 - **Public Channels**: Channels where anyone can join and chat.
 - **Private Groups**: Groups where only authorized members can join.
+

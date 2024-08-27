@@ -44,6 +44,7 @@ class NotificationSenderDto {
   img: string;
 }
 
+
 export class NotificationDto {
   @ApiProperty({ example: '66b5978b819ac58ea33f2959' })
   id: string;
