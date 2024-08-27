@@ -9,16 +9,21 @@ export class SubscriptionDto {
     @IsString()
     id?: string
     @IsString()
+    @ApiProperty()
     @IsNotEmpty()
     userId: string
     @IsString()
+    @ApiProperty()
     @IsNotEmpty()
     endpoint: string
     @IsJSON()
+    @ApiProperty()
     @IsNotEmpty()
     keys: Key
+    @ApiProperty()
     @IsString()
     userAgent?: string
+    @ApiProperty()
     @IsString()
     deviceId?: string
 }
