@@ -1,37 +1,37 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsJSON, IsNotEmpty, IsString } from "class-validator";
 
 export type Key = {
-    p256dh: string
-    auth: string
+  p256dh: string
+  auth: string
 }
 
 export class SubscriptionDto {
-    @IsString()
-    id?: string
-    @IsString()
-    @ApiProperty()
-    @IsNotEmpty()
-    userId: string
-    @IsString()
-    @ApiProperty()
-    @IsNotEmpty()
-    endpoint: string
-    @IsJSON()
-    @ApiProperty()
-    @IsNotEmpty()
-    keys: Key
-    @ApiProperty()
-    @IsString()
-    userAgent?: string
-    @ApiProperty()
-    @IsString()
-    deviceId?: string
+  @IsString()
+  id?: string
+  @IsString()
+  @ApiProperty()
+  @IsNotEmpty()
+  userId: string
+  @IsString()
+  @ApiProperty()
+  @IsNotEmpty()
+  endpoint: string
+  @ApiProperty()
+  @IsJSON()
+  @IsNotEmpty()
+  keys: Key
+  @ApiProperty({required:false})
+  @IsString()
+  userAgent?: string
+  @ApiProperty({required:false})
+  @IsString()
+  deviceId?: string
 }
 
 
 
 
-import { ApiProperty } from '@nestjs/swagger';
 
 class NotificationSenderDto {
   @ApiProperty({ example: '66b589446e18e3438b78cbcd' })
